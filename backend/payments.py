@@ -17,27 +17,84 @@ PRICE_RUB = float(os.environ.get("PRICE_RUB", "15"))
 PAYMENT_MODE = os.environ.get("PAYMENT_MODE", "manual")
 
 
-def build_payment_url(payment) -> str:
+def build_payment_url(payment, base_url: str = "") -> str:
     """Возвращает URL, на который уводим пользователя для оплаты."""
     if PAYMENT_MODE == "yoomoney":
-        success = os.environ.get("FRONTEND_ORIGIN", "https://gan4ik13.github.io").split(",")[0].strip()
-        label = payment["comment"][:64]
-        return (
-            f"https://yoomoney.ru/quick-pay-form"
-            f"?receiver={urllib.parse.quote(WALLET_ID)}"
-            f"&quickpay-form=small"
-            f"&targets={urllib.parse.quote(payment['comment'])}"
-            f"&sum={payment['amount']:.2f}"
-            f"&label={urllib.parse.quote(label)}"
-            f"&successURL={urllib.parse.quote(success.rstrip('/') + '/', safe='')}"
-            f"&need-fio=false&need-email=false&need-phone=false&need-address=false"
-        )
+        # Открываем внутреннюю страницу с POST-формой на yoomoney.ru/quickpay/confirm
+        # (старый GET-линк quick-pay-form?quickpay-form=small удалён ЮMoney).
+        return f"{base_url.rstrip('/')}/api/payment/pay/{payment['id']}"
     if PAYMENT_MODE == "cryptopay":
         invoice = _cryptopay_create_invoice(payment)
         payment["external_id"] = invoice["invoice_id"]
         return invoice["pay_url"]
     # manual mode: no real gateway
     return None
+
+
+def build_payment_form_html(payment) -> str:
+    """HTML-страница с формой перевода на кошелёк ЮMoney.
+
+    По актуальным правилам ЮMoney форма отправляется POST-ом на
+    https://yoomoney.ru/quickpay/confirm с полем quickpay-form=button.
+    """
+    label = payment["comment"][:64]
+    amount = f"{payment['amount']:.2f}"
+    success = os.environ.get("FRONTEND_ORIGIN", "https://gan4ik13.github.io").split(",")[0].strip()
+    success = success.rstrip("/") + "/"
+
+    def esc(s: str) -> str:
+        return s.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;")
+
+    def hidden(name: str, value: str) -> str:
+        return f'<input type="hidden" name="{name}" value="{esc(value)}"/>'
+
+    fields = [
+        ("receiver", WALLET_ID),
+        ("quickpay-form", "button"),
+        ("paymentType", "PC"),
+        ("sum", amount),
+        ("label", label),
+        ("successURL", success),
+    ]
+    inputs = "".join(hidden(n, v) for n, v in fields)
+
+    return f"""<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Оплата подписки</title>
+<style>
+  body {{ margin:0; display:flex; align-items:center; justify-content:center;
+        min-height:100vh; background:#0b1020; color:#e5e7eb;
+        font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }}
+  .card {{ background:#141a2e; border:1px solid #2a3352; border-radius:16px;
+        padding:32px; max-width:360px; width:calc(100% - 32px); text-align:center; }}
+  h1 {{ font-size:18px; margin:0 0 8px; }}
+  p {{ font-size:13px; color:#9ca3af; margin:0 0 20px; }}
+  .price {{ font-size:28px; font-weight:700; color:#818cf8; margin-bottom:20px; }}
+  form button {{ width:100%; background:#818cf8; border:0; border-radius:10px;
+        color:#fff; font-size:15px; font-weight:600; padding:13px; cursor:pointer; }}
+  form button:hover {{ background:#6d7bf7; }}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Оплата подписки SubTrack</h1>
+    <div class="price">{amount} &#8381;</div>
+    <p>Сейчас вы перейдёте на страницу ЮMoney для подтверждения перевода.</p>
+    <form id="payform" method="POST" action="https://yoomoney.ru/quickpay/confirm">
+      {inputs}
+      <button type="submit">Перейти к оплате</button>
+    </form>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {{
+      document.getElementById('payform').submit();
+    }});
+  </script>
+</body>
+</html>"""
 
 
 def _cryptopay_create_invoice(payment):

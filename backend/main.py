@@ -7,7 +7,7 @@ import uuid
 
 from fastapi import FastAPI, Depends, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, EmailStr
 
 import auth as auth_util
@@ -226,7 +226,7 @@ def delete_sub(sid: str, user: dict = Depends(current_user)):
 
 @app.post("/api/payment/create")
 @retry_db
-def create_payment(user: dict = Depends(current_user)):
+def create_payment(user: dict = Depends(current_user), request: Request = None):
     if user["premium"]:
         raise HTTPException(400, "Premium уже активен")
     pid = pay.new_payment_id()
@@ -238,7 +238,7 @@ def create_payment(user: dict = Depends(current_user)):
         )
     payment = {"id": pid, "comment": comment, "amount": pay.PRICE_RUB}
     try:
-        pay_url = pay.build_payment_url(payment)
+        pay_url = pay.build_payment_url(payment, base_url=str(request.base_url))
     except Exception as e:
         raise HTTPException(502, f"Не удалось создать платёж: {e}")
     with db() as conn:
@@ -247,6 +247,21 @@ def create_payment(user: dict = Depends(current_user)):
             (payment.get("external_id"), pid),
         )
     return {"payment_id": pid, "pay_url": pay_url}
+
+
+@app.get("/api/payment/pay/{pid}")
+@retry_db
+def payment_pay_page(pid: str):
+    """Страница с POST-формой перевода в ЮMoney (открывается в новой вкладке)."""
+    with db() as conn:
+        p = conn.execute("SELECT * FROM payments WHERE id=?", (pid,)).fetchone()
+    if not p:
+        raise HTTPException(404, "Платёж не найден")
+    if p["status"] == "paid":
+        raise HTTPException(400, "Платёж уже оплачен")
+    return HTMLResponse(
+        pay.build_payment_form_html({"comment": p["comment"], "amount": p["amount"]})
+    )
 
 
 @app.get("/api/payment/status/{pid}")

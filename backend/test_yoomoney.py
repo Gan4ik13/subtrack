@@ -46,15 +46,19 @@ def payment_comment(pid):
         return conn.execute("SELECT comment FROM payments WHERE id = ?", (pid,)).fetchone()["comment"]
 
 
-# 1) build_payment_url
-payment = {"comment": "subtrack-1-pay123456", "amount": 15.0}
-url = pay.build_payment_url(payment)
+# 1) build_payment_url -> внутренняя страница с POST-формой на quickpay/confirm
+payment = {"id": "pay123456", "comment": "subtrack-1-pay123456", "amount": 15.0}
+url = pay.build_payment_url(payment, base_url="http://testserver")
 print("pay_url:", url)
-assert "receiver=4100112345678901" in url
-assert "label=subtrack-1-pay123456" in url
-assert "sum=15.00" in url
-assert "successURL=" in url
-assert "subtrack-1-pay123456" in url  # targets — видимый текст оплаты
+assert url == "http://testserver/api/payment/pay/pay123456"
+html = pay.build_payment_form_html(payment)
+assert "https://yoomoney.ru/quickpay/confirm" in html
+assert 'name="receiver" value="4100112345678901"' in html
+assert 'name="quickpay-form" value="button"' in html
+assert 'name="paymentType" value="PC"' in html
+assert 'name="sum" value="15.00"' in html
+assert 'name="label" value="subtrack-1-pay123456"' in html
+print("pay form ok")
 
 # 2) verify_notification (реальный формат ЮMoney)
 p = {
@@ -89,6 +93,15 @@ assert res["pay_url"] is not None
 pid = res["payment_id"]
 comment = payment_comment(pid)
 print("payment created:", pid, comment)
+print("pay_url:", res["pay_url"])
+
+# страница оплаты открывается и содержит POST-форму с label этого платежа
+page = client.get(res["pay_url"])
+print("pay page status:", page.status_code)
+assert page.status_code == 200
+assert "https://yoomoney.ru/quickpay/confirm" in page.text
+assert 'name="quickpay-form" value="button"' in page.text
+assert 'name="label" value="' + comment + '"' in page.text
 
 notify = dict(p)
 notify["label"] = comment
