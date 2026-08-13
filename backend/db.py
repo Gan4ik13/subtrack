@@ -70,7 +70,8 @@ CREATE TABLE IF NOT EXISTS payments (
 
 def get_conn():
     if USE_POSTGRES:
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(DATABASE_URL, connect_timeout=20)
+        conn.settimeout(20)
         conn.set_session(autocommit=False)
         return Conn(conn, pg=True)
     conn = sqlite3.connect(DB_PATH)
@@ -214,7 +215,9 @@ def insert_get_id(conn, sql, params=()):
         cur = conn._raw_cursor()
         cur.execute(s, p)
         row = cur.fetchone()
-        return row[0]
+        if row is None:
+            return None
+        return list(row.values())[0] if isinstance(row, dict) else row[0]
     s, p = conn._sql(sql, params)
     cur = conn._raw_cursor()
     cur.execute(s, p)
