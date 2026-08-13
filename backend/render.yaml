@@ -11,6 +11,8 @@ services:
         value: manual
       - key: PRICE_RUB
         value: "15"
+      - key: DATABASE_URL
+        sync: false
       - key: TG_BOT_TOKEN
         sync: false
       - key: FRONTEND_ORIGIN

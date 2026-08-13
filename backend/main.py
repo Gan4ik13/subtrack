@@ -1,7 +1,6 @@
 import datetime
 import json
 import os
-import sqlite3
 import uuid
 
 from fastapi import FastAPI, Depends, HTTPException, Header
@@ -11,7 +10,7 @@ from pydantic import BaseModel, EmailStr
 
 import auth as auth_util
 import payments as pay
-from db import db, init_db, now_iso
+from db import db, init_db, insert_get_id, now_iso
 from scheduler import start_scheduler
 
 app = FastAPI(title="SubTrack API")
@@ -95,16 +94,19 @@ def register(body: RegisterIn):
         raise HTTPException(400, "Пароль минимум 4 символа")
     salt, h = auth_util.create_user_password(body.password)
     token = auth_util.new_token()
-    try:
-        with db() as conn:
-            cur = conn.execute(
-                "INSERT INTO users (email, password_hash, salt) VALUES (?, ?, ?)",
-                (email, h, salt),
-            )
-            user_id = cur.lastrowid
-            conn.execute("INSERT INTO sessions (token, user_id) VALUES (?, ?)", (token, user_id))
-    except sqlite3.IntegrityError:
-        raise HTTPException(409, "Пользователь с таким email уже существует")
+    with db() as conn:
+        exists = conn.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone()
+        if exists:
+            raise HTTPException(409, "Пользователь с таким email уже существует")
+        user_id = insert_get_id(
+            conn,
+            "INSERT INTO users (email, password_hash, salt, created_at) VALUES (?, ?, ?, ?)",
+            (email, h, salt, now_iso()),
+        )
+        conn.execute(
+            "INSERT INTO sessions (token, user_id, created_at) VALUES (?, ?, ?)",
+            (token, user_id, now_iso()),
+        )
     return {"token": token, "email": email}
 
 
@@ -119,7 +121,10 @@ def login(body: LoginIn):
         raise HTTPException(401, "Неверный email или пароль")
     token = auth_util.new_token()
     with db() as conn:
-        conn.execute("INSERT INTO sessions (token, user_id) VALUES (?, ?)", (token, user["id"]))
+        conn.execute(
+            "INSERT INTO sessions (token, user_id, created_at) VALUES (?, ?, ?)",
+            (token, user["id"], now_iso()),
+        )
     return {"token": token, "email": email}
 
 
@@ -212,8 +217,8 @@ def create_payment(user: dict = Depends(current_user)):
     comment = f"subtrack-{user['id']}-{pid[-6:]}"
     with db() as conn:
         conn.execute(
-            "INSERT INTO payments (id, user_id, provider, amount, comment) VALUES (?, ?, ?, ?, ?)",
-            (pid, user["id"], pay.PAYMENT_MODE, pay.PRICE_RUB, comment),
+            "INSERT INTO payments (id, user_id, provider, amount, comment, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (pid, user["id"], pay.PAYMENT_MODE, pay.PRICE_RUB, comment, now_iso()),
         )
     payment = {"id": pid, "comment": comment, "amount": pay.PRICE_RUB}
     try:

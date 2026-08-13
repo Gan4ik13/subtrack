@@ -1,28 +1,39 @@
 import os
-import sqlite3
 import threading
 import time
 from contextlib import contextmanager
 
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+USE_POSTGRES = DATABASE_URL.startswith("postgres") or DATABASE_URL.startswith("postgresql")
+
+if USE_POSTGRES:
+    import psycopg2
+    import psycopg2.extras
+else:
+    import sqlite3
+
 DB_PATH = os.environ.get("SUBTRAK_DB", os.path.join(os.path.dirname(__file__), "subtrack.db"))
 _lock = threading.Lock()
 
-SCHEMA = """
+
+def _schema():
+    id_col = "id SERIAL PRIMARY KEY" if USE_POSTGRES else "id INTEGER PRIMARY KEY AUTOINCREMENT"
+    return f"""
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    {id_col},
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     salt TEXT NOT NULL,
     premium INTEGER NOT NULL DEFAULT 0,
     premium_until TEXT,
     telegram_chat_id TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
     token TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    created_at TEXT NOT NULL,
     FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
@@ -47,7 +58,7 @@ CREATE TABLE IF NOT EXISTS payments (
     comment TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
     external_id TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    created_at TEXT NOT NULL,
     verified_at TEXT,
     FOREIGN KEY(user_id) REFERENCES users(id)
 );
@@ -55,17 +66,21 @@ CREATE TABLE IF NOT EXISTS payments (
 
 
 def get_conn():
+    if USE_POSTGRES:
+        conn = psycopg2.connect(DATABASE_URL)
+        conn.set_session(autocommit=False)
+        return Conn(conn, pg=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    return Conn(conn, pg=False)
 
 
 def init_db():
     with _lock:
         conn = get_conn()
         try:
-            conn.executescript(SCHEMA)
+            conn.executescript(_schema())
             conn.commit()
         finally:
             conn.close()
@@ -86,3 +101,88 @@ def db():
 
 def now_iso():
     return time.strftime("%Y-%m-%d %H:%M:%S")
+
+
+class Cursor:
+    def __init__(self, raw, pg):
+        self._raw = raw
+        self._pg = pg
+        self.rowcount = getattr(raw, "rowcount", -1) or -1
+
+    def fetchone(self):
+        row = self._raw.fetchone()
+        if row is None:
+            return None
+        return dict(row) if not isinstance(row, dict) else row
+
+    def fetchall(self):
+        rows = self._raw.fetchall()
+        return [dict(r) if not isinstance(r, dict) else r for r in rows]
+
+
+class Conn:
+    def __init__(self, raw, pg):
+        self._raw = raw
+        self.pg = pg
+        self.lastrowid = None
+
+    def _sql(self, sql, params):
+        if self.pg:
+            return sql.replace("?", "%s"), tuple(params or ())
+        return sql, tuple(params or ())
+
+    def _raw_cursor(self):
+        if self.pg:
+            return self._raw.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        return self._raw.cursor()
+
+    def execute(self, sql, params=()):
+        s, p = self._sql(sql, params)
+        cur = self._raw_cursor()
+        cur.execute(s, p)
+        c = Cursor(cur, self.pg)
+        if self.pg:
+            self.lastrowid = None
+        else:
+            self.lastrowid = cur.lastrowid
+        return c
+
+    def executescript(self, sql):
+        if self.pg:
+            cur = self._raw_cursor()
+            for stmt in [x.strip() for x in sql.split(";") if x.strip()]:
+                cur.execute(stmt)
+        else:
+            self._raw.executescript(sql)
+
+    def commit(self):
+        try:
+            self._raw.commit()
+        except Exception:
+            pass
+
+    def rollback(self):
+        try:
+            self._raw.rollback()
+        except Exception:
+            pass
+
+    def close(self):
+        try:
+            self._raw.close()
+        except Exception:
+            pass
+
+
+def insert_get_id(conn, sql, params=()):
+    """Вставляет строку и возвращает id. Работает в PostgreSQL и SQLite."""
+    if conn.pg:
+        s, p = conn._sql(sql + " RETURNING id", params)
+        cur = conn._raw_cursor()
+        cur.execute(s, p)
+        row = cur.fetchone()
+        return row[0]
+    s, p = conn._sql(sql, params)
+    cur = conn._raw_cursor()
+    cur.execute(s, p)
+    return cur.lastrowid

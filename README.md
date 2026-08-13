@@ -5,12 +5,13 @@
 ## Архитектура
 
 - `frontend/index.html` — статический сайт (один файл, без сборки). Размещается на GitHub Pages.
-- `backend/` — API на FastAPI + SQLite. Размещается на Render.
+- `backend/` — API на FastAPI. Размещается на Render.
   - Авторизация (email + пароль, PBKDF2, токены-сессии)
   - CRUD подписок, лимит 3 для бесплатного тарифа
   - Платежи: ЮMoney (личный кошелёк, без ИНН), Crypto Pay или ручной режим
   - Telegram-уведомления о списаниях за 3 дня
   - Экспорт данных в JSON
+  - БД: PostgreSQL (`DATABASE_URL`), локально по умолчанию SQLite
 
 ## Запуск локально
 
@@ -32,6 +33,7 @@ python -m http.server 8080
 
 | Переменная | Значение по умолчанию | Описание |
 |---|---|---|
+| `DATABASE_URL` | — | Строка подключения к PostgreSQL (обязательна на сервере). Локально без неё — SQLite |
 | `PAYMENT_MODE` | `manual` | `manual` \| `yoomoney` \| `cryptopay` |
 | `PRICE_RUB` | `15` | Цена Premium за месяц |
 | `YOOMONEY_WALLET` | — | Номер кошелька ЮMoney (для yoomoney-режима) |
@@ -39,6 +41,17 @@ python -m http.server 8080
 | `CRYPTOPAY_TOKEN` | — | Токен Crypto Pay (для cryptopay-режима) |
 | `TG_BOT_TOKEN` | — | Токен Telegram-бота для уведомлений |
 | `FRONTEND_ORIGIN` | `http://localhost:8080,...` | Домены фронтенда через запятую (CORS) |
+
+## База данных: Neon (бесплатно, данные не пропадают)
+
+Бесплатная БД Render удаляется через 30 дней, поэтому используется Neon:
+
+1. Зарегистрируйтесь на https://neon.tech (работает вход через GitHub).
+2. Create Project → Database name: `subtrack`, регион `Frankfurt (eu-central-1)`.
+3. Скопируйте **connection string** вида `postgresql://user:password@ep-....eu-central-1.aws.neon.tech/subtrack?sslmode=require` (замените `<password>` на настоящий пароль).
+4. Вставьте её в `DATABASE_URL` на Render.
+
+Схема создаётся автоматически при первом запуске API.
 
 ## Режимы оплаты
 
@@ -53,7 +66,7 @@ python -m http.server 8080
 ### Бэкенд → Render
 1. Запушьте репозиторий на GitHub.
 2. В Render Dashboard → **New → Blueprint** → выберите этот репозиторий. `backend/render.yaml` создаст сервис.
-3. В настройках сервиса задайте переменные (обязательные): `TG_BOT_TOKEN`, `FRONTEND_ORIGIN` = адрес вашего GitHub Pages, при желании `PAYMENT_MODE`, `YOOMONEY_WALLET`, `YOOMONEY_TOKEN`.
+3. В настройках сервиса задайте переменные (обязательные): `DATABASE_URL` (из Neon), `TG_BOT_TOKEN`, `FRONTEND_ORIGIN` = адрес вашего GitHub Pages, при желании `PAYMENT_MODE`, `YOOMONEY_WALLET`, `YOOMONEY_TOKEN`.
 4. Проверьте `/health` — должен вернуть `{"ok": true}`.
 
 ### Фронтенд → GitHub Pages
