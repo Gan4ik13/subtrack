@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SubTrack — трекер подписок</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'sans-serif'] },
+        colors: {
+          accent: { DEFAULT: '#6366f1', 50:'#eef2ff',100:'#e0e7ff',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca' },
+          surface: '#15161d',
+          surface2: '#1c1e29',
+          border: '#272a38'
+        },
+        boxShadow: {
+          card: '0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.5)',
+          glow: '0 0 0 1px rgba(99,102,241,.4), 0 8px 24px -8px rgba(99,102,241,.35)'
+        },
+        borderRadius: { '2xl': '1rem', '3xl': '1.5rem' }
+      }
+    }
+  }
+</script>
+<style>
+  /* === Design tokens === */
+  :root{
+    --bg:#0b0c10;
+    --surface:#15161d;
+    --surface-2:#1c1e29;
+    --border:#272a38;
+    --text-primary:#f1f2f6;
+    --text-secondary:#9497a8;
+    --text-muted:#5c5f70;
+    --accent:#6366f1;
+    --accent-hover:#4f46e5;
+    --success:#22c55e;
+    --warning:#eab308;
+    --danger:#f43f5e;
+  }
+  *{ -webkit-tap-highlight-color: transparent; }
+  html,body{ background:var(--bg); color:var(--text-primary); font-family:'Inter',sans-serif; }
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:8px; }
+  .hidden{ display:none !important; }
+  input:focus, select:focus, button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  input, select{ background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); }
+  input::placeholder{ color:var(--text-muted); }
+  .card-hover{ transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+  .card-hover:hover{ transform:translateY(-2px); border-color:#3a3d52; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .fade-in{ animation:fadeIn .25s ease both; }
+  @keyframes toastIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  .toast{ animation:toastIn .2s ease both; }
+  .ring-dot{ box-shadow:0 0 0 3px rgba(255,255,255,.06); }
+</style>
+</head>
+<body class="min-h-screen antialiased">
+
+<div id="toast-container" class="fixed bottom-4 right-4 left-4 sm:left-auto z-[100] flex flex-col gap-2 items-stretch sm:items-end pointer-events-none"></div>
+
+<!-- ======================= VIEW: LOGIN ======================= -->
+<section data-view="login" class="min-h-screen flex items-center justify-center px-4 py-10">
+  <div class="w-full max-w-sm fade-in">
+    <div class="flex items-center gap-2 justify-center mb-8">
+      <div class="w-9 h-9 rounded-xl bg-accent flex items-center justify-center shadow-glow shrink-0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <span class="text-lg font-bold tracking-tight">SubTrack</span>
+    </div>
+
+    <div class="bg-surface border border-border rounded-2xl shadow-card p-6">
+      <div class="flex bg-surface-2 rounded-xl p-1 mb-6 text-sm font-medium">
+        <button type="button" data-auth-tab="login" class="flex-1 py-2 rounded-lg transition-colors">Вход</button>
+        <button type="button" data-auth-tab="register" class="flex-1 py-2 rounded-lg transition-colors">Регистрация</button>
+      </div>
+
+      <form id="auth-form" class="flex flex-col gap-3" novalidate>
+        <div>
+          <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Email</label>
+          <input type="email" id="auth-email" required placeholder="you@example.com" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Пароль</label>
+          <input type="password" id="auth-password" required minlength="4" placeholder="Минимум 4 символа" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+        </div>
+        <p id="auth-error" class="text-xs text-[var(--danger)] hidden"></p>
+        <button type="submit" id="auth-submit" class="mt-2 bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5">Войти</button>
+      </form>
+    </div>
+    <p class="text-center text-xs text-[var(--text-muted)] mt-6">Данные хранятся на сервере · бесплатно до 3 подписок</p>
+  </div>
+</section>
+
+<!-- ======================= VIEW: DASHBOARD ======================= -->
+<section data-view="dashboard" class="hidden min-h-screen pb-28">
+  <!-- Header -->
+  <header class="border-b border-border sticky top-0 z-30 bg-[rgba(11,12,16,.85)] backdrop-blur">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <span class="font-bold tracking-tight text-[15px]">SubTrack</span>
+        <span id="premium-badge" class="hidden ml-1 text-[10px] font-bold uppercase tracking-wide bg-accent/15 text-accent px-2 py-0.5 rounded-full">Premium</span>
+      </div>
+      <button type="button" data-nav="settings" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Настройки">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="#9497a8" stroke-width="1.7"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="#9497a8" stroke-width="1.4"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 pt-6">
+    <!-- Summary -->
+    <div class="grid grid-cols-2 gap-3 mb-6">
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+        <p class="text-xs text-[var(--text-secondary)] mb-1">В месяц</p>
+        <p id="summary-monthly" class="text-lg font-bold tracking-tight leading-tight">—</p>
+      </div>
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+        <p class="text-xs text-[var(--text-secondary)] mb-1">В год</p>
+        <p id="summary-yearly" class="text-lg font-bold tracking-tight leading-tight">—</p>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between mb-3">
+      <h1 class="text-sm font-semibold text-[var(--text-secondary)]">Подписки <span id="sub-count" class="text-[var(--text-muted)]"></span></h1>
+      <button type="button" data-action="open-add" class="text-xs font-semibold bg-accent hover:bg-accent-hover text-white px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>
+        Добавить
+      </button>
+    </div>
+
+    <!-- Subscriptions list -->
+    <div id="subscriptions-list" class="flex flex-col gap-2.5"></div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="hidden flex-col items-center text-center py-16 px-6">
+      <svg width="120" height="96" viewBox="0 0 120 96" fill="none" class="mb-5 opacity-90">
+        <rect x="14" y="20" width="70" height="52" rx="10" fill="#1c1e29" stroke="#272a38" stroke-width="1.5"/>
+        <rect x="30" y="4" width="70" height="52" rx="10" fill="#15161d" stroke="#272a38" stroke-width="1.5"/>
+        <circle cx="65" cy="30" r="10" fill="#6366f1" fill-opacity=".18"/>
+        <path d="M60 30l3.5 3.5L71 26" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="40" y="42" width="50" height="4" rx="2" fill="#272a38"/>
+        <rect x="40" y="50" width="34" height="4" rx="2" fill="#272a38"/>
+      </svg>
+      <p class="text-sm font-semibold mb-1">Пока нет подписок</p>
+      <p class="text-xs text-[var(--text-secondary)] max-w-[220px] mb-5">Добавьте первую подписку, чтобы отслеживать списания и не платить лишнего</p>
+      <button type="button" data-action="open-add" class="text-xs font-semibold bg-accent hover:bg-accent-hover text-white px-4 py-2.5 rounded-xl transition-colors">Добавить подписку</button>
+    </div>
+
+    <!-- Free-tier limit banner -->
+    <div id="limit-banner" class="hidden mt-4 border border-accent/30 bg-accent/10 rounded-2xl p-4 flex items-center justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold text-accent-400">Лимит бесплатного тарифа</p>
+        <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">До 3 подписок на бесплатном тарифе. Перейдите на Premium — безлимит и Telegram-уведомления.</p>
+      </div>
+      <button type="button" data-nav="settings" class="shrink-0 text-[11px] font-semibold bg-accent hover:bg-accent-hover text-white px-3 py-2 rounded-lg transition-colors">Улучшить</button>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= VIEW: SETTINGS ======================= -->
+<section data-view="settings" class="hidden min-h-screen pb-16">
+  <header class="border-b border-border sticky top-0 z-30 bg-[rgba(11,12,16,.85)] backdrop-blur">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
+      <button type="button" data-nav="dashboard" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Назад">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#f1f2f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="font-bold tracking-tight text-[15px]">Настройки</span>
+    </div>
+  </header>
+
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 pt-6 flex flex-col gap-4">
+    <!-- Account -->
+    <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+      <p class="text-xs text-[var(--text-secondary)] mb-1">Аккаунт</p>
+      <p id="settings-email" class="text-sm font-semibold">—</p>
+    </div>
+
+    <!-- Premium -->
+    <div id="premium-card" class="bg-surface border border-border rounded-2xl shadow-card p-4"></div>
+
+    <!-- Telegram notifications -->
+    <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+      <p class="text-sm font-semibold mb-1">Telegram-уведомления</p>
+      <p class="text-[11px] text-[var(--text-secondary)] mb-3">Напоминания о списаниях за 3 дня приходят в личку бота. Укажите ваш числовой ID — узнать можно у <span class="text-accent-400">@userinfobot</span>.</p>
+      <div class="flex gap-2">
+        <input type="text" id="tg-chat-id" placeholder="Например, 123456789" class="flex-1 rounded-xl px-3.5 py-2.5 text-sm min-w-0">
+        <button type="button" id="tg-save" class="shrink-0 text-xs font-semibold bg-accent hover:bg-accent-hover text-white px-3.5 py-2 rounded-lg transition-colors">Сохранить</button>
+      </div>
+      <p id="tg-hint" class="hidden text-[11px] mt-2 text-[var(--success)]">Сохранено. Бот пришлёт напоминания о списаниях.</p>
+    </div>
+
+    <!-- Export -->
+    <div class="bg-surface border border-border rounded-2xl shadow-card p-4 flex items-center justify-between gap-3">
+      <div>
+        <p class="text-sm font-semibold">Экспорт данных</p>
+        <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">Скачать все подписки в формате JSON</p>
+      </div>
+      <button type="button" data-action="export-json" class="shrink-0 text-[11px] font-semibold px-3 py-2 rounded-lg transition-colors border border-border hover:border-accent/50">Экспорт</button>
+    </div>
+
+    <button type="button" data-action="logout" class="mt-2 text-xs font-semibold text-[var(--danger)] border border-[var(--danger)]/30 bg-[var(--danger)]/10 rounded-xl py-2.5 hover:bg-[var(--danger)]/15 transition-colors">Выйти из аккаунта</button>
+  </div>
+</section>
+
+<!-- ======================= MODAL: ADD/EDIT SUBSCRIPTION ======================= -->
+<div id="subscription-modal" class="hidden fixed inset-0 z-[90] items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+  <div class="bg-surface w-full sm:max-w-md sm:rounded-3xl rounded-t-3xl border border-border shadow-card p-6 fade-in max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h2 id="sub-modal-title" class="text-base font-bold">Новая подписка</h2>
+      <button type="button" data-action="close-sub-modal" class="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center" aria-label="Закрыть">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#9497a8" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <form id="sub-form" class="flex flex-col gap-3.5" novalidate>
+      <input type="hidden" id="sub-id">
+      <div>
+        <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Название</label>
+        <input type="text" id="sub-name" required maxlength="40" placeholder="Netflix" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Сумма</label>
+          <input type="number" id="sub-amount" required min="0.01" step="0.01" placeholder="599" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Валюта</label>
+          <select id="sub-currency" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+            <option value="RUB">₽ RUB</option>
+            <option value="USD">$ USD</option>
+            <option value="EUR">€ EUR</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Периодичность</label>
+          <select id="sub-period" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+            <option value="monthly">Ежемесячно</option>
+            <option value="yearly">Ежегодно</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Категория</label>
+          <select id="sub-category" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+            <option>Развлечения</option>
+            <option>Работа</option>
+            <option>Здоровье</option>
+            <option>Образование</option>
+            <option>Утилиты</option>
+            <option>Другое</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Следующее списание</label>
+        <input type="date" id="sub-date" required class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+      </div>
+      <p id="sub-error" class="text-xs text-[var(--danger)] hidden"></p>
+      <div class="flex gap-2.5 mt-2">
+        <button type="button" id="sub-delete" class="hidden text-xs font-semibold text-[var(--danger)] border border-[var(--danger)]/30 bg-[var(--danger)]/10 rounded-xl px-4 py-2.5 hover:bg-[var(--danger)]/15 transition-colors">Удалить</button>
+        <button type="submit" class="flex-1 bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================= MODAL: PREMIUM / PAYMENT ======================= -->
+<div id="payment-modal" class="hidden fixed inset-0 z-[95] items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+  <div class="bg-surface w-full sm:max-w-sm sm:rounded-3xl rounded-t-3xl border border-border shadow-card p-6 fade-in">
+    <div id="payment-modal-body"></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000'
+  : 'https://subtrack-api.onrender.com';
+
+class App {
+  static TOKEN_KEY = 'subtrack_token';
+  static FREE_LIMIT = 3;
+  static CURRENCY_SYMBOL = { RUB: '₽', USD: '$', EUR: '€' };
+
+  constructor() {
+    this.state = {
+      token: localStorage.getItem(App.TOKEN_KEY) || null,
+      user: null,
+      view: 'login',
+      authMode: 'login',
+      editingSubId: null,
+      paymentId: null,
+      subs: [],
+      payTimer: null
+    };
+  }
+
+  /* ---------------------------- Инициализация ---------------------------- */
+  init() {
+    this.cacheDom();
+    this.bindEvents();
+    this.setAuthMode('login');
+    if (this.state.token) {
+      this.loadMe()
+        .then(() => this.switchView('dashboard'))
+        .catch(() => this.switchView('login'));
+    } else {
+      this.switchView('login');
+    }
+  }
+
+  async api(path, options = {}) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (this.state.token) headers['Authorization'] = 'Bearer ' + this.state.token;
+    const resp = await fetch(API_BASE + path, { ...options, headers });
+    let data = {};
+    try { data = await resp.json(); } catch (e) {}
+    if (resp.status === 401) {
+      this.clearSession();
+      this.switchView('login');
+      throw new Error('Сессия истекла');
+    }
+    if (!resp.ok) {
+      const detail = typeof data.detail === 'string' ? data.detail : 'Ошибка запроса';
+      throw new Error(detail);
+    }
+    return data;
+  }
+
+  async loadMe() {
+    const me = await this.api('/api/me');
+    this.state.user = me;
+    this.state.subs = me.subscriptions || [];
+    return me;
+  }
+
+  cacheDom() {
+    this.el = {
+      views: document.querySelectorAll('[data-view]'),
+      authForm: document.getElementById('auth-form'),
+      authEmail: document.getElementById('auth-email'),
+      authPassword: document.getElementById('auth-password'),
+      authError: document.getElementById('auth-error'),
+      authSubmit: document.getElementById('auth-submit'),
+      authTabs: document.querySelectorAll('[data-auth-tab]'),
+
+      premiumBadge: document.getElementById('premium-badge'),
+      summaryMonthly: document.getElementById('summary-monthly'),
+      summaryYearly: document.getElementById('summary-yearly'),
+      subCount: document.getElementById('sub-count'),
+      subsList: document.getElementById('subscriptions-list'),
+      emptyState: document.getElementById('empty-state'),
+      limitBanner: document.getElementById('limit-banner'),
+
+      settingsEmail: document.getElementById('settings-email'),
+      premiumCard: document.getElementById('premium-card'),
+      tgInput: document.getElementById('tg-chat-id'),
+      tgSave: document.getElementById('tg-save'),
+      tgHint: document.getElementById('tg-hint'),
+
+      subModal: document.getElementById('subscription-modal'),
+      subModalTitle: document.getElementById('sub-modal-title'),
+      subForm: document.getElementById('sub-form'),
+      subId: document.getElementById('sub-id'),
+      subName: document.getElementById('sub-name'),
+      subAmount: document.getElementById('sub-amount'),
+      subCurrency: document.getElementById('sub-currency'),
+      subPeriod: document.getElementById('sub-period'),
+      subCategory: document.getElementById('sub-category'),
+      subDate: document.getElementById('sub-date'),
+      subError: document.getElementById('sub-error'),
+      subDelete: document.getElementById('sub-delete'),
+
+      paymentModal: document.getElementById('payment-modal'),
+      paymentModalBody: document.getElementById('payment-modal-body'),
+
+      toastContainer: document.getElementById('toast-container')
+    };
+  }
+
+  bindEvents() {
+    this.el.authTabs.forEach(tab => {
+      tab.addEventListener('click', () => this.setAuthMode(tab.dataset.authTab));
+    });
+    this.el.authForm.addEventListener('submit', e => this.handleAuthSubmit(e));
+
+    document.querySelectorAll('[data-nav]').forEach(btn => {
+      btn.addEventListener('click', () => this.switchView(btn.dataset.nav));
+    });
+
+    document.querySelectorAll('[data-action="open-add"]').forEach(btn => {
+      btn.addEventListener('click', () => this.openSubModal());
+    });
+    document.getElementById('subscription-modal').addEventListener('click', e => {
+      if (e.target.id === 'subscription-modal' || e.target.dataset.action === 'close-sub-modal') this.closeSubModal();
+    });
+    this.el.subForm.addEventListener('submit', e => this.handleSubSubmit(e));
+    this.el.subDelete.addEventListener('click', () => this.deleteSubscription(this.state.editingSubId));
+
+    document.querySelector('[data-action="logout"]').addEventListener('click', () => this.logout());
+    document.querySelector('[data-action="export-json"]').addEventListener('click', () => this.exportJSON());
+    this.el.tgSave.addEventListener('click', () => this.saveTelegram());
+
+    this.el.paymentModal.addEventListener('click', e => {
+      if (e.target.id === 'payment-modal') this.closePaymentModal();
+    });
+  }
+
+  /* --------------------------------- Роутинг -------------------------------- */
+  switchView(name) {
+    this.state.view = name;
+    this.el.views.forEach(section => {
+      section.classList.toggle('hidden', section.dataset.view !== name);
+    });
+    if (name === 'dashboard') this.renderDashboard();
+    if (name === 'settings') this.renderSettings();
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------------------------------- Auth ---------------------------------- */
+  setAuthMode(mode) {
+    this.state.authMode = mode;
+    this.el.authTabs.forEach(t => {
+      const active = t.dataset.authTab === mode;
+      t.classList.toggle('bg-accent', active);
+      t.classList.toggle('text-white', active);
+      t.classList.toggle('text-[var(--text-secondary)]', !active);
+    });
+    this.el.authSubmit.textContent = mode === 'login' ? 'Войти' : 'Создать аккаунт';
+    this.hideAuthError();
+  }
+
+  hideAuthError() { this.el.authError.classList.add('hidden'); }
+  showAuthError(msg) { this.el.authError.textContent = msg; this.el.authError.classList.remove('hidden'); }
+
+  async handleAuthSubmit(e) {
+    e.preventDefault();
+    const email = this.el.authEmail.value.trim().toLowerCase();
+    const password = this.el.authPassword.value;
+    if (!email || !password || password.length < 4) {
+      this.showAuthError('Введите email и пароль (минимум 4 символа)');
+      return;
+    }
+    this.el.authSubmit.disabled = true;
+    this.el.authSubmit.textContent = '…';
+    try {
+      const path = this.state.authMode === 'register' ? '/api/auth/register' : '/api/auth/login';
+      const res = await this.api(path, { method: 'POST', body: JSON.stringify({ email, password }) });
+      this.state.token = res.token;
+      localStorage.setItem(App.TOKEN_KEY, res.token);
+      await this.loadMe();
+      this.el.authForm.reset();
+      this.switchView('dashboard');
+      this.toast(this.state.authMode === 'register' ? 'Аккаунт создан. Добро пожаловать!' : 'С возвращением!', 'success');
+    } catch (err) {
+      this.showAuthError(err.message);
+    } finally {
+      this.el.authSubmit.disabled = false;
+      this.el.authSubmit.textContent = this.state.authMode === 'login' ? 'Войти' : 'Создать аккаунт';
+    }
+  }
+
+  clearSession() {
+    this.state.token = null;
+    this.state.user = null;
+    this.state.subs = [];
+    localStorage.removeItem(App.TOKEN_KEY);
+  }
+
+  async logout() {
+    try { await this.api('/api/auth/logout', { method: 'POST', body: '{}' }); } catch (e) {}
+    this.clearSession();
+    this.switchView('login');
+    this.toast('Вы вышли из аккаунта', 'info');
+  }
+
+  /* ------------------------------- Подписки CRUD ------------------------------ */
+  async openSubModal(subId = null) {
+    const user = this.state.user;
+    if (!subId && !user.premium && user.subscriptions.length >= App.FREE_LIMIT) {
+      this.switchView('settings');
+      this.toast('Достигнут лимит бесплатного тарифа (3 подписки)', 'warning');
+      return;
+    }
+    this.state.editingSubId = subId;
+    this.el.subForm.reset();
+    this.el.subError.classList.add('hidden');
+
+    if (subId) {
+      const sub = user.subscriptions.find(s => s.id === subId);
+      this.el.subModalTitle.textContent = 'Редактировать подписку';
+      this.el.subId.value = sub.id;
+      this.el.subName.value = sub.name;
+      this.el.subAmount.value = sub.amount;
+      this.el.subCurrency.value = sub.currency;
+      this.el.subPeriod.value = sub.period;
+      this.el.subCategory.value = sub.category;
+      this.el.subDate.value = sub.next_date;
+      this.el.subDelete.classList.remove('hidden');
+    } else {
+      this.el.subModalTitle.textContent = 'Новая подписка';
+      this.el.subId.value = '';
+      this.el.subDate.value = new Date().toISOString().slice(0, 10);
+      this.el.subDelete.classList.add('hidden');
+    }
+    this.el.subModal.classList.remove('hidden');
+    this.el.subModal.classList.add('flex');
+  }
+
+  closeSubModal() {
+    this.el.subModal.classList.add('hidden');
+    this.el.subModal.classList.remove('flex');
+    this.state.editingSubId = null;
+  }
+
+  async handleSubSubmit(e) {
+    e.preventDefault();
+    const name = this.el.subName.value.trim();
+    const amount = parseFloat(this.el.subAmount.value);
+    const date = this.el.subDate.value;
+    if (!name || !amount || amount <= 0 || !date) {
+      this.el.subError.textContent = 'Заполните все поля корректно';
+      this.el.subError.classList.remove('hidden');
+      return;
+    }
+    const payload = {
+      name,
+      amount,
+      currency: this.el.subCurrency.value,
+      period: this.el.subPeriod.value,
+      category: this.el.subCategory.value,
+      next_date: date
+    };
+    const id = this.el.subId.value;
+    try {
+      if (id) {
+        await this.api('/api/subscriptions/' + id, { method: 'PUT', body: JSON.stringify(payload) });
+        this.toast('Подписка обновлена', 'success');
+      } else {
+        await this.api('/api/subscriptions', { method: 'POST', body: JSON.stringify(payload) });
+        this.toast('Подписка добавлена', 'success');
+      }
+      this.closeSubModal();
+      await this.loadMe();
+      this.renderDashboard();
+    } catch (err) {
+      this.el.subError.textContent = err.message;
+      this.el.subError.classList.remove('hidden');
+    }
+  }
+
+  async deleteSubscription(id) {
+    if (!id) return;
+    if (!confirm('Удалить эту подписку?')) return;
+    try {
+      await this.api('/api/subscriptions/' + id, { method: 'DELETE' });
+      this.closeSubModal();
+      await this.loadMe();
+      this.renderDashboard();
+      this.toast('Подписка удалена', 'info');
+    } catch (err) {
+      this.toast(err.message, 'warning');
+    }
+  }
+
+  /* -------------------------------- Расчёты -------------------------------- */
+  daysUntil(dateStr) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const target = new Date(dateStr + 'T00:00:00');
+    return Math.round((target - today) / 86400000);
+  }
+
+  urgencyClasses(days) {
+    if (days < 3) return { dot: 'bg-[var(--danger)]', text: 'text-[var(--danger)]', bg: 'bg-[var(--danger)]/10' };
+    if (days <= 7) return { dot: 'bg-[var(--warning)]', text: 'text-[var(--warning)]', bg: 'bg-[var(--warning)]/10' };
+    return { dot: 'bg-[var(--success)]', text: 'text-[var(--success)]', bg: 'bg-[var(--success)]/10' };
+  }
+
+  formatDaysLabel(days) {
+    if (days < 0) return `Просрочено на ${Math.abs(days)} дн.`;
+    if (days === 0) return 'Сегодня';
+    if (days === 1) return 'Завтра';
+    return `Через ${days} дн.`;
+  }
+
+  computeTotals(subscriptions) {
+    const monthly = {}, yearly = {};
+    subscriptions.forEach(s => {
+      const m = s.period === 'yearly' ? s.amount / 12 : s.amount;
+      const y = s.period === 'yearly' ? s.amount : s.amount * 12;
+      monthly[s.currency] = (monthly[s.currency] || 0) + m;
+      yearly[s.currency] = (yearly[s.currency] || 0) + y;
+    });
+    return { monthly, yearly };
+  }
+
+  formatCurrencyMap(map) {
+    const entries = Object.entries(map).filter(([, v]) => v > 0.004);
+    if (!entries.length) return '—';
+    return entries.map(([cur, v]) => `${this.formatNumber(v)} ${App.CURRENCY_SYMBOL[cur] || cur}`).join(' + ');
+  }
+
+  formatNumber(n) {
+    return n % 1 === 0 ? n.toFixed(0) : n.toFixed(2);
+  }
+
+  /* -------------------------------- Рендеринг ------------------------------- */
+  renderDashboard() {
+    const user = this.state.user;
+    if (!user) return;
+
+    this.el.premiumBadge.classList.toggle('hidden', !user.premium);
+
+    const subs = [...this.state.subs].sort((a, b) => this.daysUntil(a.next_date) - this.daysUntil(b.next_date));
+    const totals = this.computeTotals(subs);
+    this.el.summaryMonthly.textContent = this.formatCurrencyMap(totals.monthly);
+    this.el.summaryYearly.textContent = this.formatCurrencyMap(totals.yearly);
+    this.el.subCount.textContent = subs.length ? `(${subs.length}${!user.premium ? '/' + App.FREE_LIMIT : ''})` : '';
+
+    this.el.emptyState.classList.toggle('hidden', subs.length !== 0);
+    this.el.emptyState.classList.toggle('flex', subs.length === 0);
+    this.el.limitBanner.classList.toggle('hidden', user.premium || subs.length < App.FREE_LIMIT);
+
+    this.el.subsList.innerHTML = subs.map(s => this.subscriptionCardHTML(s)).join('');
+    this.el.subsList.querySelectorAll('[data-edit-id]').forEach(card => {
+      card.addEventListener('click', () => this.openSubModal(card.dataset.editId));
+    });
+  }
+
+  subscriptionCardHTML(s) {
+    const days = this.daysUntil(s.next_date);
+    const u = this.urgencyClasses(days);
+    const symbol = App.CURRENCY_SYMBOL[s.currency] || s.currency;
+    return `
+      <div data-edit-id="${s.id}" class="card-hover cursor-pointer bg-surface border border-border rounded-2xl shadow-card p-4 flex items-center gap-3.5 fade-in">
+        <div class="w-11 h-11 rounded-xl bg-surface-2 border border-border flex items-center justify-center shrink-0 text-sm font-bold text-accent-400">
+          ${this.escapeHtml(s.name.slice(0, 2).toUpperCase())}
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold truncate">${this.escapeHtml(s.name)}</p>
+          <p class="text-xs text-[var(--text-secondary)] truncate">${this.escapeHtml(s.category)} · ${s.period === 'yearly' ? 'ежегодно' : 'ежемесячно'}</p>
+        </div>
+        <div class="text-right shrink-0">
+          <p class="text-sm font-bold">${this.formatNumber(s.amount)} ${symbol}</p>
+          <div class="flex items-center justify-end gap-1.5 mt-1">
+            <span class="w-1.5 h-1.5 rounded-full ${u.dot} ring-dot"></span>
+            <span class="text-[11px] font-medium ${u.text}">${this.formatDaysLabel(days)}</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  renderSettings() {
+    const user = this.state.user;
+    if (!user) return;
+    this.el.settingsEmail.textContent = user.email;
+    this.el.tgInput.value = user.telegram_chat_id || '';
+    this.el.tgHint.classList.add('hidden');
+
+    this.el.premiumCard.innerHTML = user.premium ? `
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-sm font-semibold flex items-center gap-1.5">Premium активен
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="#22c55e" stroke-width="1.5"/></svg>
+          </p>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">Безлимитные подписки и Telegram-уведомления${user.premium_until ? ` · до ${this.formatDate(user.premium_until)}` : ''}</p>
+        </div>
+      </div>` : `
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-sm font-semibold">Перейти на Premium</p>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">Безлимит подписок + Telegram-уведомления</p>
+        </div>
+        <button type="button" data-action="upgrade" class="shrink-0 text-[11px] font-semibold bg-accent hover:bg-accent-hover text-white px-3.5 py-2 rounded-lg transition-colors">Оформить</button>
+      </div>`;
+
+    const upgradeBtn = this.el.premiumCard.querySelector('[data-action="upgrade"]');
+    if (upgradeBtn) upgradeBtn.addEventListener('click', () => this.openPaymentModal());
+  }
+
+  formatDate(isoDate) {
+    try {
+      const [y, m, d] = isoDate.split('-');
+      return `${d}.${m}.${y}`;
+    } catch (e) {
+      return isoDate;
+    }
+  }
+
+  /* -------------------------------- Premium -------------------------------- */
+  openPaymentModal() {
+    const user = this.state.user;
+    if (user && user.premium) return;
+    this.el.paymentModalBody.innerHTML = `
+      <div class="text-center">
+        <div class="w-12 h-12 rounded-2xl bg-accent/15 flex items-center justify-center mx-auto mb-4">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z" stroke="#818cf8" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </div>
+        <h2 class="text-base font-bold mb-1">SubTrack Premium</h2>
+        <p class="text-xs text-[var(--text-secondary)] mb-5">Безлимит подписок и Telegram-уведомления</p>
+        <div class="bg-surface-2 border border-border rounded-2xl p-4 mb-5 text-left">
+          <div class="flex items-baseline gap-1 mb-3">
+            <span class="text-2xl font-extrabold">15 ₽</span>
+            <span class="text-xs text-[var(--text-secondary)]">/ месяц</span>
+          </div>
+          <ul class="text-xs text-[var(--text-secondary)] flex flex-col gap-1.5">
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Неограниченное число подписок</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Напоминания о списаниях в Telegram</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Отмена в любой момент</li>
+          </ul>
+        </div>
+        <button type="button" id="pay-btn" class="w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-3">
+          Оплатить 15 ₽
+        </button>
+        <button type="button" data-action="close-payment" class="w-full text-xs text-[var(--text-secondary)] mt-3 py-1">Отмена</button>
+      </div>`;
+
+    this.el.paymentModalBody.querySelector('#pay-btn').addEventListener('click', () => this.startPayment());
+    this.el.paymentModalBody.querySelector('[data-action="close-payment"]').addEventListener('click', () => this.closePaymentModal());
+
+    this.el.paymentModal.classList.remove('hidden');
+    this.el.paymentModal.classList.add('flex');
+  }
+
+  async startPayment() {
+    this.el.paymentModalBody.innerHTML = this.spinnerHTML('Создание платежа…');
+    let res;
+    try {
+      res = await this.api('/api/payment/create', { method: 'POST', body: '{}' });
+    } catch (err) {
+      this.el.paymentModalBody.innerHTML = `
+        <div class="text-center py-6">
+          <p class="text-sm font-medium text-[var(--danger)] mb-4">${this.escapeHtml(err.message)}</p>
+          <button type="button" data-action="close-payment" class="w-full text-xs text-[var(--text-secondary)] py-1">Закрыть</button>
+        </div>`;
+      this.el.paymentModalBody.querySelector('[data-action="close-payment"]').addEventListener('click', () => this.closePaymentModal());
+      return;
+    }
+
+    this.state.paymentId = res.payment_id;
+
+    if (res.pay_url) {
+      window.open(res.pay_url, '_blank');
+      this.el.paymentModalBody.innerHTML = `
+        <div class="text-center">
+          <div class="w-12 h-12 rounded-2xl bg-accent/15 flex items-center justify-center mx-auto mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h2 class="text-base font-bold mb-1">Оплата запущена</h2>
+          <p class="text-xs text-[var(--text-secondary)] mb-5">Мы открыли окно оплаты. После оплаты нажмите «Проверить».</p>
+          <button type="button" id="pay-check" class="w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-3">Проверить оплату</button>
+          <button type="button" data-action="close-payment" class="w-full text-xs text-[var(--text-secondary)] mt-3 py-1">Позже</button>
+        </div>`;
+    } else {
+      this.el.paymentModalBody.innerHTML = `
+        <div class="text-center">
+          <div class="w-12 h-12 rounded-2xl bg-accent/15 flex items-center justify-center mx-auto mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h2 class="text-base font-bold mb-1">Платеж готов</h2>
+          <p class="text-xs text-[var(--text-secondary)] mb-1">Сумма: <b>15 ₽</b></p>
+          <p class="text-xs text-[var(--text-secondary)] mb-5">Переведите указанную сумму на кошелёк проекта и нажмите «Я оплатил».</p>
+          <button type="button" id="pay-check" class="w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-3">Я оплатил — проверить</button>
+          <button type="button" data-action="close-payment" class="w-full text-xs text-[var(--text-secondary)] mt-3 py-1">Позже</button>
+        </div>`;
+    }
+
+    this.el.paymentModalBody.querySelector('#pay-check').addEventListener('click', () => this.checkPayment());
+    this.el.paymentModalBody.querySelector('[data-action="close-payment"]').addEventListener('click', () => this.closePaymentModal());
+    this.startPaymentPolling();
+  }
+
+  startPaymentPolling() {
+    if (this.state.payTimer) return;
+    this.state.payTimer = setInterval(() => this.checkPayment(true), 8000);
+  }
+
+  stopPaymentPolling() {
+    if (this.state.payTimer) {
+      clearInterval(this.state.payTimer);
+      this.state.payTimer = null;
+    }
+  }
+
+  async checkPayment(silent = false) {
+    if (!this.state.paymentId) return;
+    let res;
+    try {
+      res = await this.api('/api/payment/status/' + this.state.paymentId);
+    } catch (e) {
+      return;
+    }
+    if (res.premium) {
+      this.stopPaymentPolling();
+      await this.loadMe();
+      this.showPaymentSuccess();
+    } else if (!silent) {
+      this.toast('Оплата ещё не подтверждена', 'warning');
+    }
+  }
+
+  showPaymentSuccess() {
+    this.state.paymentId = null;
+    this.el.paymentModalBody.innerHTML = `
+      <div class="text-center py-6">
+        <div class="w-14 h-14 rounded-full bg-[var(--success)]/15 flex items-center justify-center mx-auto mb-4">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#22c55e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2 class="text-base font-bold mb-1">Оплата прошла успешно</h2>
+        <p class="text-xs text-[var(--text-secondary)] mb-6">Premium активирован на вашем аккаунте</p>
+        <button type="button" id="pay-done" class="w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-3">Готово</button>
+      </div>`;
+    this.el.paymentModalBody.querySelector('#pay-done').addEventListener('click', () => {
+      this.closePaymentModal();
+      this.renderSettings();
+      this.toast('Premium активирован', 'success');
+    });
+  }
+
+  closePaymentModal() {
+    this.stopPaymentPolling();
+    this.el.paymentModal.classList.add('hidden');
+    this.el.paymentModal.classList.remove('flex');
+    this.state.paymentId = null;
+  }
+
+  spinnerHTML(text) {
+    return `
+      <div class="text-center py-10">
+        <svg class="animate-spin mx-auto mb-4" width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="#272a38" stroke-width="3"/>
+          <path d="M22 12a10 10 0 00-10-10" stroke="#6366f1" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <p class="text-sm font-medium text-[var(--text-secondary)]">${text}</p>
+      </div>`;
+  }
+
+  /* ----------------------------- Уведомления ----------------------------- */
+  async saveTelegram() {
+    const chatId = this.el.tgInput.value.trim();
+    try {
+      await this.api('/api/settings/telegram', { method: 'PUT', body: JSON.stringify({ telegram_chat_id: chatId }) });
+      this.state.user.telegram_chat_id = chatId || null;
+      this.el.tgHint.classList.remove('hidden');
+      this.toast('Telegram-уведомления сохранены', 'success');
+    } catch (err) {
+      this.toast(err.message, 'warning');
+    }
+  }
+
+  /* --------------------------------- Экспорт -------------------------------- */
+  async exportJSON() {
+    try {
+      const resp = await fetch(API_BASE + '/api/export', {
+        headers: { 'Authorization': 'Bearer ' + this.state.token }
+      });
+      if (!resp.ok) throw new Error('Ошибка экспорта');
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `subtrack-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      this.toast('Файл JSON скачан', 'success');
+    } catch (err) {
+      this.toast(err.message, 'warning');
+    }
+  }
+
+  /* ---------------------------------- Утилиты -------------------------------- */
+  escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  toast(message, type = 'info') {
+    const colors = {
+      success: 'border-[var(--success)]/40 text-[var(--success)]',
+      warning: 'border-[var(--warning)]/40 text-[var(--warning)]',
+      info: 'border-border text-[var(--text-secondary)]'
+    };
+    const el = document.createElement('div');
+    el.className = `toast pointer-events-auto bg-surface-2 border ${colors[type] || colors.info} rounded-xl px-4 py-2.5 text-xs font-medium shadow-card max-w-xs`;
+    el.textContent = message;
+    this.el.toastContainer.appendChild(el);
+    setTimeout(() => {
+      el.style.transition = 'opacity .2s ease';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 200);
+    }, 2600);
+  }
+}
+
+const app = new App();
+document.addEventListener('DOMContentLoaded', () => {
+  app.init();
+});
+</script>
+</body>
+</html>
