@@ -1,9 +1,11 @@
+import asyncio
 import datetime
 import json
 import os
+import urllib.parse
 import uuid
 
-from fastapi import FastAPI, Depends, HTTPException, Header
+from fastapi import FastAPI, Depends, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, EmailStr
@@ -93,12 +95,18 @@ def register(body: RegisterIn):
     email = body.email.lower().strip()
     if len(body.password) < 4:
         raise HTTPException(400, "Пароль минимум 4 символа")
-    salt, h = auth_util.create_user_password(body.password)
     token = auth_util.new_token()
     with db() as conn:
-        exists = conn.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone()
+        exists = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
         if exists:
+            if auth_util.verify_password(body.password, exists["salt"], exists["password_hash"]):
+                conn.execute(
+                    "INSERT INTO auth_sessions (token, user_id, created_at) VALUES (?, ?, ?)",
+                    (token, exists["id"], now_iso()),
+                )
+                return {"token": token, "email": email}
             raise HTTPException(409, "Пользователь с таким email уже существует")
+        salt, h = auth_util.create_user_password(body.password)
         user_id = insert_get_id(
             conn,
             "INSERT INTO users (email, password_hash, salt, created_at) VALUES (?, ?, ?, ?)",
@@ -280,6 +288,35 @@ def confirm_payment(pid: str, user: dict = Depends(current_user)):
         activate_premium(conn, user["id"])
         conn.execute("UPDATE payments SET status='paid', verified_at=? WHERE id=?", (now_iso(), pid))
     return {"ok": True, "premium": True}
+
+
+@retry_db
+def _activate_premium_by_label(label: str) -> None:
+    with db() as conn:
+        p = conn.execute(
+            "SELECT * FROM payments WHERE comment = ? AND status != 'paid'", (label,)
+        ).fetchone()
+        if p:
+            activate_premium(conn, p["user_id"])
+            conn.execute(
+                "UPDATE payments SET status='paid', verified_at=? WHERE id=?",
+                (now_iso(), p["id"]),
+            )
+
+
+@app.post("/api/payments/yoomoney/notify")
+async def yoomoney_notify(request: Request):
+    """HTTP-уведомление ЮMoney о зачислении. Активирует Premium по label."""
+    raw = (await request.body()).decode("utf-8")
+    params = dict(urllib.parse.parse_qsl(raw, keep_blank_values=True))
+    if not pay.verify_notification(params):
+        raise HTTPException(403, "Bad signature")
+    if params.get("notification_type") != "p2p-incoming" or params.get("test_notification") in ("true", "1"):
+        return {"ok": True}
+    label = params.get("label", "")
+    if label:
+        await asyncio.to_thread(_activate_premium_by_label, label)
+    return {"ok": True}
 
 
 @app.put("/api/settings/telegram")

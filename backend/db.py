@@ -73,7 +73,11 @@ def get_conn():
         conn = psycopg2.connect(
             DATABASE_URL,
             connect_timeout=20,
-            options="-c statement_timeout=20000",
+            keepalives=1,
+            keepalives_idle=30,
+            keepalives_interval=5,
+            keepalives_count=5,
+            options="-c statement_timeout=45000 -c idle_in_transaction_session_timeout=30000",
         )
         conn.set_session(autocommit=False)
         return Conn(conn, pg=True)
@@ -110,24 +114,24 @@ def _exec_until_ok(stmt, attempts=5):
 
 
 def _is_schema_not_ready(exc):
-    msg = str(getattr(exc, "pgerror", "") or exc)
-    return "does not exist" in msg and ("relation" in msg or "table" in msg)
+    msg = str(getattr(exc, "pgerror", "") or exc).lower()
+    return ("does not exist" in msg and ("relation" in msg or "table" in msg)) or "no such table" in msg
 
 
 def retry_db(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         last = None
-        for attempt in range(4):
+        for attempt in range(6):
             try:
                 return func(*args, **kwargs)
             except DB_ERRORS as e:
                 last = e
-                time.sleep(1 + attempt)
+                time.sleep((1 + attempt) if attempt < 4 else 6 + 2 * attempt)
             except Exception as e:
                 if _is_schema_not_ready(e):
                     last = e
-                    time.sleep(1 + attempt)
+                    time.sleep((1 + attempt) if attempt < 4 else 6 + 2 * attempt)
                 else:
                     raise
         raise last
@@ -204,10 +208,7 @@ class Conn:
             self._raw.executescript(sql)
 
     def commit(self):
-        try:
-            self._raw.commit()
-        except Exception:
-            pass
+        self._raw.commit()
 
     def rollback(self):
         try:

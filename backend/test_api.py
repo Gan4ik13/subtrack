@@ -27,8 +27,10 @@ t1 = call("POST", "/api/auth/register", {"email": "test@example.com", "password"
 token = t1["token"]
 print("register ok")
 
-call("POST", "/api/auth/register", {"email": "test@example.com", "password": "pass123"}, expect=409)
-print("duplicate rejected ok")
+call("POST", "/api/auth/register", {"email": "test@example.com", "password": "pass123"})
+print("duplicate register logs in ok")
+call("POST", "/api/auth/register", {"email": "test@example.com", "password": "different"}, expect=409)
+print("wrong-password register rejected ok")
 
 call("POST", "/api/auth/login", {"email": "test@example.com", "password": "wrong"}, expect=401)
 print("bad login rejected ok")

@@ -2,7 +2,7 @@ import datetime
 import threading
 import time
 
-from db import db, now_iso
+from db import db, now_iso, _is_schema_not_ready
 from notify import send_charge_reminder
 
 REMINDER_DAYS = 3
@@ -45,9 +45,13 @@ def _loop():
     while True:
         try:
             _run_cycle()
+            time.sleep(_CHECK_INTERVAL)
         except Exception as e:
-            print(f"[scheduler] error: {e}")
-        time.sleep(_CHECK_INTERVAL)
+            if _is_schema_not_ready(e):
+                time.sleep(30)
+            else:
+                print(f"[scheduler] error: {e}")
+                time.sleep(_CHECK_INTERVAL)
 
 
 def start_scheduler():

@@ -1,10 +1,14 @@
+import hashlib
+import hmac
 import os
 import secrets
+import urllib.parse
 
 import requests
 
 WALLET_ID = os.environ.get("YOOMONEY_WALLET", "")
 YOOMONEY_TOKEN = os.environ.get("YOOMONEY_TOKEN", "")
+YOOMONEY_NOTIFY_SECRET = os.environ.get("YOOMONEY_NOTIFY_SECRET", "")
 CRYPTOPAY_TOKEN = os.environ.get("CRYPTOPAY_TOKEN", "")
 CRYPTOPAY_ASSET = os.environ.get("CRYPTOPAY_ASSET", "USDT")
 CRYPTOPAY_FIAT = os.environ.get("CRYPTOPAY_FIAT", "RUB")
@@ -16,12 +20,17 @@ PAYMENT_MODE = os.environ.get("PAYMENT_MODE", "manual")
 def build_payment_url(payment) -> str:
     """Возвращает URL, на который уводим пользователя для оплаты."""
     if PAYMENT_MODE == "yoomoney":
+        success = os.environ.get("FRONTEND_ORIGIN", "https://gan4ik13.github.io").split(",")[0].strip()
+        label = payment["comment"][:64]
         return (
             f"https://yoomoney.ru/quick-pay-form"
-            f"?receiver={WALLET_ID}"
+            f"?receiver={urllib.parse.quote(WALLET_ID)}"
             f"&quickpay-form=small"
-            f"&targets={payment['comment']}"
+            f"&targets={urllib.parse.quote(payment['comment'])}"
             f"&sum={payment['amount']:.2f}"
+            f"&label={urllib.parse.quote(label)}"
+            f"&successURL={urllib.parse.quote(success.rstrip('/') + '/', safe='')}"
+            f"&need-fio=false&need-email=false&need-phone=false&need-address=false"
         )
     if PAYMENT_MODE == "cryptopay":
         invoice = _cryptopay_create_invoice(payment)
@@ -57,6 +66,37 @@ def check_payment(payment) -> bool:
     if PAYMENT_MODE == "cryptopay":
         return _cryptopay_check(payment)
     return False
+
+
+def verify_notification(params: dict) -> bool:
+    """Проверяет подпись HTTP-уведомления ЮMoney.
+
+    ЮMoney шлёт form-encoded POST с полем sha1_hash:
+      sha1_hash = sha1(notification_type&operation_id&amount&currency&datetime
+                       &sender&codepro&notification_secret&label)
+    Значения берутся как есть (без URL-кодирования), склеиваются через '&'.
+    """
+    secret = YOOMONEY_NOTIFY_SECRET
+    if not secret:
+        return False
+    sign = (params.get("sha1_hash") or "").lower()
+    if not sign:
+        return False
+    raw = "&".join(
+        [
+            params.get("notification_type", ""),
+            params.get("operation_id", ""),
+            params.get("amount", ""),
+            params.get("currency", ""),
+            params.get("datetime", ""),
+            params.get("sender", ""),
+            params.get("codepro", ""),
+            secret,
+            params.get("label", ""),
+        ]
+    )
+    expected = hashlib.sha1(raw.encode("utf-8")).hexdigest()
+    return hmac.compare_digest(expected, sign)
 
 
 def _yoomoney_check(payment) -> bool:

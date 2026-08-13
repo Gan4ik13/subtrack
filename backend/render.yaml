@@ -9,7 +9,7 @@ services:
     healthCheckPath: /health
     envVars:
       - key: PAYMENT_MODE
-        value: manual
+        value: yoomoney
       - key: PRICE_RUB
         value: "15"
       - key: DATABASE_URL
@@ -17,4 +17,10 @@ services:
       - key: TG_BOT_TOKEN
         sync: false
       - key: FRONTEND_ORIGIN
+        sync: false
+      - key: YOOMONEY_WALLET
+        sync: false
+      - key: YOOMONEY_TOKEN
+        sync: false
+      - key: YOOMONEY_NOTIFY_SECRET
         sync: false
