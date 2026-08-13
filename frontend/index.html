@@ -298,6 +298,7 @@ class App {
       authMode: 'login',
       editingSubId: null,
       paymentId: null,
+      paymentManual: false,
       subs: [],
       payTimer: null
     };
@@ -746,6 +747,7 @@ class App {
     }
 
     this.state.paymentId = res.payment_id;
+    this.state.paymentManual = !res.pay_url;
 
     if (res.pay_url) {
       window.open(res.pay_url, '_blank');
@@ -780,6 +782,7 @@ class App {
 
   startPaymentPolling() {
     if (this.state.payTimer) return;
+    if (this.state.paymentManual) return;
     this.state.payTimer = setInterval(() => this.checkPayment(true), 8000);
   }
 
@@ -794,8 +797,13 @@ class App {
     if (!this.state.paymentId) return;
     let res;
     try {
-      res = await this.api('/api/payment/status/' + this.state.paymentId);
+      if (this.state.paymentManual) {
+        res = await this.api('/api/payment/' + this.state.paymentId + '/confirm', { method: 'POST', body: '{}' });
+      } else {
+        res = await this.api('/api/payment/status/' + this.state.paymentId);
+      }
     } catch (e) {
+      if (!silent) this.toast('Не удалось проверить оплату', 'warning');
       return;
     }
     if (res.premium) {
@@ -809,6 +817,7 @@ class App {
 
   showPaymentSuccess() {
     this.state.paymentId = null;
+    this.state.paymentManual = false;
     this.el.paymentModalBody.innerHTML = `
       <div class="text-center py-6">
         <div class="w-14 h-14 rounded-full bg-[var(--success)]/15 flex items-center justify-center mx-auto mb-4">
@@ -830,6 +839,7 @@ class App {
     this.el.paymentModal.classList.add('hidden');
     this.el.paymentModal.classList.remove('flex');
     this.state.paymentId = null;
+    this.state.paymentManual = false;
   }
 
   spinnerHTML(text) {

@@ -269,7 +269,9 @@ def payment_status(pid: str, user: dict = Depends(current_user)):
 @app.post("/api/payment/{pid}/confirm")
 @retry_db
 def confirm_payment(pid: str, user: dict = Depends(current_user)):
-    # Ручное подтверждение (режим manual / проверка владельцем).
+    # Ручное подтверждение доступно только в режиме manual.
+    if pay.PAYMENT_MODE != "manual":
+        raise HTTPException(403, "Автоподтверждение недоступно в этом режиме оплаты")
     with db() as conn:
         p = conn.execute("SELECT * FROM payments WHERE id=? AND user_id=?", (pid, user["id"])).fetchone()
     if not p:
