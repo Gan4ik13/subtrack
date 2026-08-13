@@ -310,5 +310,22 @@ def export(user: dict = Depends(current_user)):
     )
 
 
-init_db()
+def _init_db_background():
+    import threading
+    import time
+
+    def worker():
+        for attempt in range(1, 121):
+            try:
+                init_db()
+                print("[startup] DB schema ready")
+                return
+            except Exception as exc:
+                print(f"[startup] init_db attempt {attempt} failed: {exc}")
+                time.sleep(10)
+
+    threading.Thread(target=worker, daemon=True, name="init-db").start()
+
+
+_init_db_background()
 start_scheduler()

@@ -106,6 +106,11 @@ def _exec_until_ok(stmt, attempts=5):
     raise last
 
 
+def _is_schema_not_ready(exc):
+    msg = str(getattr(exc, "pgerror", "") or exc)
+    return "does not exist" in msg and ("relation" in msg or "table" in msg)
+
+
 def retry_db(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -116,6 +121,12 @@ def retry_db(func):
             except DB_ERRORS as e:
                 last = e
                 time.sleep(1 + attempt)
+            except Exception as e:
+                if _is_schema_not_ready(e):
+                    last = e
+                    time.sleep(1 + attempt)
+                else:
+                    raise
         raise last
     return wrapper
 
