@@ -70,8 +70,11 @@ CREATE TABLE IF NOT EXISTS payments (
 
 def get_conn():
     if USE_POSTGRES:
-        conn = psycopg2.connect(DATABASE_URL, connect_timeout=20)
-        conn.settimeout(20)
+        conn = psycopg2.connect(
+            DATABASE_URL,
+            connect_timeout=20,
+            options="-c statement_timeout=20000",
+        )
         conn.set_session(autocommit=False)
         return Conn(conn, pg=True)
     conn = sqlite3.connect(DB_PATH)
