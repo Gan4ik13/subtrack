@@ -1,3 +1,4 @@
+import functools
 import os
 import threading
 import time
@@ -9,8 +10,10 @@ USE_POSTGRES = DATABASE_URL.startswith("postgres") or DATABASE_URL.startswith("p
 if USE_POSTGRES:
     import psycopg2
     import psycopg2.extras
+    DB_ERRORS = (psycopg2.OperationalError, psycopg2.InterfaceError)
 else:
     import sqlite3
+    DB_ERRORS = (sqlite3.OperationalError,)
 
 DB_PATH = os.environ.get("SUBTRAK_DB", os.path.join(os.path.dirname(__file__), "subtrack.db"))
 _lock = threading.Lock()
@@ -30,7 +33,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS sessions (
+CREATE TABLE IF NOT EXISTS auth_sessions (
     token TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL,
     created_at TEXT NOT NULL,
@@ -78,12 +81,42 @@ def get_conn():
 
 def init_db():
     with _lock:
+        for stmt in _schema_statements():
+            _exec_until_ok(stmt)
+
+
+def _schema_statements():
+    return [s.strip() for s in _schema().split(";") if s.strip()]
+
+
+def _exec_until_ok(stmt, attempts=5):
+    last = None
+    for attempt in range(attempts):
         conn = get_conn()
         try:
-            conn.executescript(_schema())
+            conn.execute(stmt)
             conn.commit()
+            return
+        except DB_ERRORS as e:
+            last = e
+            time.sleep(1 + attempt)
         finally:
             conn.close()
+    raise last
+
+
+def retry_db(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        last = None
+        for attempt in range(4):
+            try:
+                return func(*args, **kwargs)
+            except DB_ERRORS as e:
+                last = e
+                time.sleep(1 + attempt)
+        raise last
+    return wrapper
 
 
 @contextmanager

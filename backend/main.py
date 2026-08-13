@@ -10,14 +10,14 @@ from pydantic import BaseModel, EmailStr
 
 import auth as auth_util
 import payments as pay
-from db import db, init_db, insert_get_id, now_iso
+from db import db, init_db, insert_get_id, now_iso, retry_db
 from scheduler import start_scheduler
 
 app = FastAPI(title="SubTrack API")
 
 FRONTEND_ORIGINS = [
     o.strip()
-    for o in os.environ.get("FRONTEND_ORIGIN", "http://localhost:8080,http://localhost:5500,https://subtrack.github.io").split(",")
+    for o in os.environ.get("FRONTEND_ORIGIN", "http://localhost:8080,http://localhost:5500,https://gan4ik13.github.io").split(",")
     if o.strip()
 ]
 app.add_middleware(
@@ -57,7 +57,7 @@ def current_user(authorization: str = Header(default="")):
     token = authorization[7:]
     with db() as conn:
         row = conn.execute(
-            "SELECT u.* FROM users u JOIN sessions s ON s.user_id = u.id WHERE s.token = ?",
+            "SELECT u.* FROM users u JOIN auth_sessions s ON s.user_id = u.id WHERE s.token = ?",
             (token,),
         ).fetchone()
     if not row:
@@ -88,6 +88,7 @@ def health():
 
 
 @app.post("/api/auth/register")
+@retry_db
 def register(body: RegisterIn):
     email = body.email.lower().strip()
     if len(body.password) < 4:
@@ -104,13 +105,14 @@ def register(body: RegisterIn):
             (email, h, salt, now_iso()),
         )
         conn.execute(
-            "INSERT INTO sessions (token, user_id, created_at) VALUES (?, ?, ?)",
+            "INSERT INTO auth_sessions (token, user_id, created_at) VALUES (?, ?, ?)",
             (token, user_id, now_iso()),
         )
     return {"token": token, "email": email}
 
 
 @app.post("/api/auth/login")
+@retry_db
 def login(body: LoginIn):
     email = body.email.lower().strip()
     with db() as conn:
@@ -122,21 +124,23 @@ def login(body: LoginIn):
     token = auth_util.new_token()
     with db() as conn:
         conn.execute(
-            "INSERT INTO sessions (token, user_id, created_at) VALUES (?, ?, ?)",
+            "INSERT INTO auth_sessions (token, user_id, created_at) VALUES (?, ?, ?)",
             (token, user["id"], now_iso()),
         )
     return {"token": token, "email": email}
 
 
 @app.post("/api/auth/logout")
+@retry_db
 def logout(user: dict = Depends(current_user), authorization: str = Header(default="")):
     token = authorization[7:]
     with db() as conn:
-        conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
+        conn.execute("DELETE FROM auth_sessions WHERE token = ?", (token,))
     return {"ok": True}
 
 
 @app.get("/api/me")
+@retry_db
 def me(user: dict = Depends(current_user)):
     with db() as conn:
         subs = conn.execute(
@@ -166,6 +170,7 @@ def _sub_payload(user, body: SubIn):
 
 
 @app.post("/api/subscriptions")
+@retry_db
 def create_sub(body: SubIn, user: dict = Depends(current_user)):
     with db() as conn:
         count = conn.execute(
@@ -186,6 +191,7 @@ def create_sub(body: SubIn, user: dict = Depends(current_user)):
 
 
 @app.put("/api/subscriptions/{sid}")
+@retry_db
 def update_sub(sid: str, body: SubIn, user: dict = Depends(current_user)):
     data = _sub_payload(user, body)
     with db() as conn:
@@ -201,6 +207,7 @@ def update_sub(sid: str, body: SubIn, user: dict = Depends(current_user)):
 
 
 @app.delete("/api/subscriptions/{sid}")
+@retry_db
 def delete_sub(sid: str, user: dict = Depends(current_user)):
     with db() as conn:
         cur = conn.execute("DELETE FROM subscriptions WHERE id=? AND user_id=?", (sid, user["id"]))
@@ -210,6 +217,7 @@ def delete_sub(sid: str, user: dict = Depends(current_user)):
 
 
 @app.post("/api/payment/create")
+@retry_db
 def create_payment(user: dict = Depends(current_user)):
     if user["premium"]:
         raise HTTPException(400, "Premium уже активен")
@@ -234,6 +242,7 @@ def create_payment(user: dict = Depends(current_user)):
 
 
 @app.get("/api/payment/status/{pid}")
+@retry_db
 def payment_status(pid: str, user: dict = Depends(current_user)):
     with db() as conn:
         p = conn.execute("SELECT * FROM payments WHERE id=? AND user_id=?", (pid, user["id"])).fetchone()
@@ -258,6 +267,7 @@ def payment_status(pid: str, user: dict = Depends(current_user)):
 
 
 @app.post("/api/payment/{pid}/confirm")
+@retry_db
 def confirm_payment(pid: str, user: dict = Depends(current_user)):
     # Ручное подтверждение (режим manual / проверка владельцем).
     with db() as conn:
@@ -271,6 +281,7 @@ def confirm_payment(pid: str, user: dict = Depends(current_user)):
 
 
 @app.put("/api/settings/telegram")
+@retry_db
 def set_telegram(body: TelegramIn, user: dict = Depends(current_user)):
     chat_id = body.telegram_chat_id.strip()
     with db() as conn:
@@ -279,6 +290,7 @@ def set_telegram(body: TelegramIn, user: dict = Depends(current_user)):
 
 
 @app.get("/api/export")
+@retry_db
 def export(user: dict = Depends(current_user)):
     with db() as conn:
         subs = conn.execute(
