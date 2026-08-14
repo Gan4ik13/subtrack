@@ -71,7 +71,7 @@ if (Test-Path $jsonPath) {
     catch { Write-Host "Не прочитан render_env.json: $($_.Exception.Message)" -ForegroundColor Yellow }
 }
 
-$want = @("YOOMONEY_WALLET", "YOOMONEY_TOKEN", "YOOMONEY_NOTIFY_SECRET", "TG_BOT_TOKEN", "DATABASE_URL")
+$want = @("YOOMONEY_WALLET", "YOOMONEY_TOKEN", "YOOMONEY_NOTIFY_SECRET", "TG_BOT_TOKEN", "DATABASE_URL", "OWNER_TG_CHAT_ID", "OWNER_EMAIL")
 $toSet = @{}
 
 foreach ($k in $want) {
