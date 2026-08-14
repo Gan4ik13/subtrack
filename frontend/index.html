@@ -129,6 +129,9 @@
       </div>
     </div>
 
+    <!-- Analytics (premium) -->
+    <div id="analytics-section" class="hidden mb-6"></div>
+
     <div class="flex items-center justify-between mb-3">
       <h1 class="text-sm font-semibold text-[var(--text-secondary)]">Подписки <span id="sub-count" class="text-[var(--text-muted)]"></span></h1>
       <button type="button" data-action="open-add" class="text-xs font-semibold bg-accent hover:bg-accent-hover text-white px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1.5">
@@ -190,7 +193,7 @@
     <!-- Telegram notifications -->
     <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
       <p class="text-sm font-semibold mb-1">Telegram-уведомления</p>
-      <p class="text-[11px] text-[var(--text-secondary)] mb-3">Напоминания о списаниях за 3 дня приходят в личку бота. Укажите ваш числовой ID — узнать можно у <span class="text-accent-400">@userinfobot</span>.</p>
+      <p class="text-[11px] text-[var(--text-secondary)] mb-3">Напоминания о списаниях приходят в личку бота. Укажите ваш числовой ID — узнать можно у <span class="text-accent-400">@userinfobot</span>. Период напоминания настраивается в карточке Premium.</p>
       <div class="flex gap-2">
         <input type="text" id="tg-chat-id" placeholder="Например, 123456789" class="flex-1 rounded-xl px-3.5 py-2.5 text-sm min-w-0">
         <button type="button" id="tg-save" class="shrink-0 text-xs font-semibold bg-accent hover:bg-accent-hover text-white px-3.5 py-2 rounded-lg transition-colors">Сохранить</button>
@@ -222,6 +225,10 @@
     </div>
     <form id="sub-form" class="flex flex-col gap-3.5" novalidate>
       <input type="hidden" id="sub-id">
+      <div id="popular-box" class="bg-surface-2/60 border border-border rounded-xl p-3">
+        <p class="text-[11px] font-semibold text-[var(--text-secondary)] mb-2">Популярные сервисы — нажмите, чтобы заполнить</p>
+        <div id="popular-grid" class="flex flex-wrap gap-1.5"></div>
+      </div>
       <div>
         <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Название</label>
         <input type="text" id="sub-name" required maxlength="40" placeholder="Netflix" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
@@ -289,6 +296,25 @@ class App {
   static TOKEN_KEY = 'subtrack_token';
   static FREE_LIMIT = 3;
   static CURRENCY_SYMBOL = { RUB: '₽', USD: '$', EUR: '€' };
+
+  static POPULAR = [
+    { name: 'Сбер', category: 'Утилиты', amount: 99 },
+    { name: 'Тинькофф', category: 'Утилиты', amount: 199 },
+    { name: 'Альфа-Банк', category: 'Утилиты', amount: 199 },
+    { name: 'ВТБ', category: 'Утилиты', amount: 199 },
+    { name: 'Яндекс Плюс', category: 'Развлечения', amount: 299 },
+    { name: 'Кинопоиск', category: 'Развлечения', amount: 299 },
+    { name: 'Иви', category: 'Развлечения', amount: 599 },
+    { name: 'Окко', category: 'Развлечения', amount: 299 },
+    { name: 'Озон', category: 'Другое', amount: 199 },
+    { name: 'Wildberries', category: 'Другое', amount: 199 },
+    { name: 'YouTube Premium', category: 'Развлечения', amount: 199 },
+    { name: 'Spotify', category: 'Развлечения', amount: 169 },
+    { name: 'ChatGPT Plus', category: 'Работа', amount: 799 },
+    { name: 'JetBrains', category: 'Работа', amount: 899 },
+    { name: 'Stepik', category: 'Образование', amount: 499 },
+    { name: 'МТС', category: 'Утилиты', amount: 400 }
+  ];
 
   constructor() {
     this.state = {
@@ -360,6 +386,7 @@ class App {
       subsList: document.getElementById('subscriptions-list'),
       emptyState: document.getElementById('empty-state'),
       limitBanner: document.getElementById('limit-banner'),
+      analyticsSection: document.getElementById('analytics-section'),
 
       settingsEmail: document.getElementById('settings-email'),
       premiumCard: document.getElementById('premium-card'),
@@ -371,6 +398,8 @@ class App {
       subModalTitle: document.getElementById('sub-modal-title'),
       subForm: document.getElementById('sub-form'),
       subId: document.getElementById('sub-id'),
+      popularBox: document.getElementById('popular-box'),
+      popularGrid: document.getElementById('popular-grid'),
       subName: document.getElementById('sub-name'),
       subAmount: document.getElementById('sub-amount'),
       subCurrency: document.getElementById('sub-currency'),
@@ -506,14 +535,37 @@ class App {
       this.el.subCategory.value = sub.category;
       this.el.subDate.value = sub.next_date;
       this.el.subDelete.classList.remove('hidden');
+      this.el.popularBox.classList.add('hidden');
     } else {
       this.el.subModalTitle.textContent = 'Новая подписка';
       this.el.subId.value = '';
       this.el.subDate.value = new Date().toISOString().slice(0, 10);
       this.el.subDelete.classList.add('hidden');
+      this.el.popularBox.classList.remove('hidden');
+      this.renderPopularGrid();
     }
     this.el.subModal.classList.remove('hidden');
     this.el.subModal.classList.add('flex');
+  }
+
+  renderPopularGrid() {
+    this.el.popularGrid.innerHTML = App.POPULAR.map(t =>
+      `<button type="button" data-popular="${this.escapeHtml(t.name)}" class="text-[11px] font-medium bg-surface-2 border border-border rounded-full px-2.5 py-1.5 hover:border-accent/60 hover:text-accent-400 transition-colors">${this.escapeHtml(t.name)}</button>`
+    ).join('');
+    this.el.popularGrid.querySelectorAll('[data-popular]').forEach(btn => {
+      btn.addEventListener('click', () => this.selectPopular(btn.dataset.popular));
+    });
+  }
+
+  selectPopular(name) {
+    const t = App.POPULAR.find(x => x.name === name);
+    if (!t) return;
+    this.el.subName.value = t.name;
+    this.el.subAmount.value = t.amount;
+    this.el.subPeriod.value = t.period || 'monthly';
+    this.el.subCategory.value = t.category;
+    this.el.subError.classList.add('hidden');
+    this.el.subName.focus();
   }
 
   closeSubModal() {
@@ -630,6 +682,11 @@ class App {
     this.el.emptyState.classList.toggle('flex', subs.length === 0);
     this.el.limitBanner.classList.toggle('hidden', user.premium || subs.length < App.FREE_LIMIT);
 
+    this.el.analyticsSection.classList.toggle('hidden', !user.premium || !subs.length);
+    if (user.premium && subs.length) {
+      this.el.analyticsSection.innerHTML = this.analyticsHTML(subs);
+    }
+
     this.el.subsList.innerHTML = subs.map(s => this.subscriptionCardHTML(s)).join('');
     this.el.subsList.querySelectorAll('[data-edit-id]').forEach(card => {
       card.addEventListener('click', () => this.openSubModal(card.dataset.editId));
@@ -659,6 +716,64 @@ class App {
       </div>`;
   }
 
+  analyticsHTML(subs) {
+    const catTotal = {};
+    let total = 0;
+    subs.forEach(s => {
+      const m = s.period === 'yearly' ? s.amount / 12 : s.amount;
+      const c = s.category || 'Другое';
+      catTotal[c] = (catTotal[c] || 0) + m;
+      total += m;
+    });
+    const cats = Object.entries(catTotal).sort((a, b) => b[1] - a[1]);
+    const colors = ['#6366f1', '#22c55e', '#eab308', '#f43f5e', '#0ea5e9', '#a855f7', '#f97316', '#14b8a6'];
+    const r = 42, C = 2 * Math.PI * r;
+    let offset = 0;
+    const segs = cats.map(([c, v], i) => {
+      const frac = v / total;
+      const seg = `<circle cx="60" cy="60" r="${r}" fill="none" stroke="${colors[i % 8]}" stroke-width="13" stroke-dasharray="${(frac * C).toFixed(2)} ${(C - frac * C).toFixed(2)}" stroke-dashoffset="${(-offset * C).toFixed(2)}" transform="rotate(-90 60 60)"/>`;
+      offset += frac;
+      return seg;
+    }).join('');
+    const legend = cats.map(([c, v], i) => `
+      <div class="flex items-center justify-between gap-3 text-xs">
+        <span class="flex items-center gap-2 text-[var(--text-secondary)] min-w-0"><span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background:${colors[i % 8]}"></span><span class="truncate">${this.escapeHtml(c)}</span></span>
+        <span class="shrink-0 font-semibold">${this.formatNumber(v)} ₽ <span class="text-[var(--text-muted)] font-normal">${(v / total * 100).toFixed(0)}%</span></span>
+      </div>`).join('');
+    const upcoming = [...subs].sort((a, b) => this.daysUntil(a.next_date) - this.daysUntil(b.next_date)).slice(0, 5)
+      .map(s => {
+        const d = this.daysUntil(s.next_date);
+        const u = this.urgencyClasses(d);
+        const symbol = App.CURRENCY_SYMBOL[s.currency] || s.currency;
+        return `
+        <div class="flex items-center justify-between gap-3 text-xs">
+          <span class="flex items-center gap-2 min-w-0"><span class="w-1.5 h-1.5 rounded-full shrink-0 ${u.dot}"></span><span class="truncate">${this.escapeHtml(s.name)} · ${this.formatNumber(s.amount)} ${symbol}</span></span>
+          <span class="shrink-0 font-medium ${u.text}">${this.formatDaysLabel(d)}</span>
+        </div>`;
+      }).join('');
+    return `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4 fade-in">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-sm font-semibold">Аналитика</p>
+          <span class="text-[11px] font-bold text-accent-400 bg-accent/10 px-2 py-0.5 rounded-full">Premium</span>
+        </div>
+        <div class="grid grid-cols-[auto_1fr] items-center gap-5">
+          <div class="relative shrink-0">
+            <svg width="120" height="120" viewBox="0 0 120 120">${segs}</svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span class="text-[10px] text-[var(--text-secondary)] leading-none">в месяц</span>
+              <span class="text-sm font-bold leading-tight">${this.formatNumber(total)} ₽</span>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2 min-w-0">${legend}</div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-border">
+          <p class="text-[11px] font-semibold text-[var(--text-secondary)] mb-2">Ближайшие списания</p>
+          <div class="flex flex-col gap-1.5">${upcoming}</div>
+        </div>
+      </div>`;
+  }
+
   renderSettings() {
     const user = this.state.user;
     if (!user) return;
@@ -672,19 +787,57 @@ class App {
           <p class="text-sm font-semibold flex items-center gap-1.5">Premium активен
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="#22c55e" stroke-width="1.5"/></svg>
           </p>
-          <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">Безлимитные подписки и Telegram-уведомления${user.premium_until ? ` · до ${this.formatDate(user.premium_until)}` : ''}</p>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">Безлимит подписок, аналитика и Telegram-напоминания${user.premium_until ? ` · до ${this.formatDate(user.premium_until)}` : ''}</p>
         </div>
-      </div>` : `
+      </div>
+      <ul class="text-[11px] text-[var(--text-secondary)] flex flex-col gap-1.5 mt-3 mb-4">
+        <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Неограниченное число подписок</li>
+        <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Аналитика расходов по категориям</li>
+        <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Ближайшие списания</li>
+        <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Telegram-напоминания за 1 / 3 / 7 дней</li>
+        <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Экспорт в CSV</li>
+      </ul>
+      <div class="flex items-center justify-between gap-3 border-t border-border pt-3 mb-3">
+        <span class="text-xs text-[var(--text-secondary)]">Напоминать о списании за</span>
+        <select id="reminder-days" class="rounded-lg px-3 py-2 text-sm">
+          <option value="1">1 день</option>
+          <option value="3">3 дня</option>
+          <option value="7">7 дней</option>
+        </select>
+      </div>
+      <button type="button" id="csv-export" class="w-full text-xs font-semibold border border-border hover:border-accent/50 rounded-xl py-2.5 transition-colors flex items-center justify-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="#9497a8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Скачать CSV
+      </button>` : `
       <div class="flex items-center justify-between gap-3">
         <div>
           <p class="text-sm font-semibold">Перейти на Premium</p>
-          <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">Безлимит подписок + Telegram-уведомления</p>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">Безлимит + аналитика + CSV + гибкие напоминания</p>
         </div>
         <button type="button" data-action="upgrade" class="shrink-0 text-[11px] font-semibold bg-accent hover:bg-accent-hover text-white px-3.5 py-2 rounded-lg transition-colors">Оформить</button>
       </div>`;
 
     const upgradeBtn = this.el.premiumCard.querySelector('[data-action="upgrade"]');
     if (upgradeBtn) upgradeBtn.addEventListener('click', () => this.openPaymentModal());
+
+    const reminderSel = this.el.premiumCard.querySelector('#reminder-days');
+    if (reminderSel) {
+      reminderSel.value = String(user.reminder_days || 3);
+      reminderSel.addEventListener('change', () => this.saveReminder(parseInt(reminderSel.value, 10)));
+    }
+    const csvBtn = this.el.premiumCard.querySelector('#csv-export');
+    if (csvBtn) csvBtn.addEventListener('click', () => this.exportCSV());
+  }
+
+  async saveReminder(days) {
+    try {
+      await this.api('/api/settings/reminder', { method: 'PUT', body: JSON.stringify({ reminder_days: days }) });
+      this.state.user.reminder_days = days;
+      this.toast('Период напоминания сохранён', 'success');
+    } catch (err) {
+      this.toast(err.message, 'warning');
+      this.renderSettings();
+    }
   }
 
   formatDate(isoDate) {
@@ -706,7 +859,7 @@ class App {
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z" stroke="#818cf8" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </div>
         <h2 class="text-base font-bold mb-1">SubTrack Premium</h2>
-        <p class="text-xs text-[var(--text-secondary)] mb-5">Безлимит подписок и Telegram-уведомления</p>
+        <p class="text-xs text-[var(--text-secondary)] mb-5">Безлимит, аналитика и Telegram-напоминания</p>
         <div class="bg-surface-2 border border-border rounded-2xl p-4 mb-5 text-left">
           <div class="flex items-baseline gap-1 mb-3">
             <span class="text-2xl font-extrabold">15 ₽</span>
@@ -714,8 +867,10 @@ class App {
           </div>
           <ul class="text-xs text-[var(--text-secondary)] flex flex-col gap-1.5">
             <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Неограниченное число подписок</li>
-            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Напоминания о списаниях в Telegram</li>
-            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Отмена в любой момент</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Аналитика расходов по категориям</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Ближайшие списания</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Telegram-напоминания за 1 / 3 / 7 дней</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Экспорт в CSV</li>
           </ul>
         </div>
         <button type="button" id="pay-btn" class="w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-3">
@@ -883,6 +1038,28 @@ class App {
       a.remove();
       URL.revokeObjectURL(url);
       this.toast('Файл JSON скачан', 'success');
+    } catch (err) {
+      this.toast(err.message, 'warning');
+    }
+  }
+
+  async exportCSV() {
+    try {
+      const resp = await fetch(API_BASE + '/api/export?format=csv', {
+        headers: { 'Authorization': 'Bearer ' + this.state.token }
+      });
+      if (!resp.ok) throw new Error('Ошибка экспорта');
+      const text = await resp.text();
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `subtrack-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      this.toast('Файл CSV скачан', 'success');
     } catch (err) {
       this.toast(err.message, 'warning');
     }

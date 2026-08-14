@@ -43,6 +43,7 @@ print("login ok")
 
 me = call("GET", "/api/me", token=token)
 assert me["premium"] is False and me["subscriptions"] == []
+call("PUT", "/api/settings/reminder", {"reminder_days": 7}, token=token, expect=403)
 print("me ok")
 
 s1 = call("POST", "/api/subscriptions", {"name": "Netflix", "amount": 599, "currency": "RUB", "period": "monthly", "category": "Развлечения", "next_date": "2026-08-16"}, token=token)
@@ -70,6 +71,20 @@ call("PUT", "/api/settings/telegram", {"telegram_chat_id": "123456"}, token=toke
 me = call("GET", "/api/me", token=token)
 assert me["telegram_chat_id"] == "123456"
 print("telegram set ok")
+
+me = call("GET", "/api/me", token=token)
+assert me.get("reminder_days") == 3
+call("PUT", "/api/settings/reminder", {"reminder_days": 7}, token=token)
+me = call("GET", "/api/me", token=token)
+assert me["reminder_days"] == 7
+call("PUT", "/api/settings/reminder", {"reminder_days": 5}, token=token, expect=400)
+print("reminder settings ok")
+
+call("GET", "/api/export?format=csv", token=token, expect=200)
+csv_resp = client.get("/api/export?format=csv", headers={"Authorization": "Bearer " + token})
+assert "text/csv" in csv_resp.headers.get("content-type", ""), csv_resp.headers.get("content-type")
+assert "Название" in csv_resp.text and "Netflix HD" in csv_resp.text and ";" in csv_resp.text
+print("csv export ok")
 
 export = call("GET", "/api/export", token=token)
 assert len(export["subscriptions"]) == 4

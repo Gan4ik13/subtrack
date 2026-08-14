@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS users (
     premium INTEGER NOT NULL DEFAULT 0,
     premium_until TEXT,
     telegram_chat_id TEXT,
+    reminder_days INTEGER NOT NULL DEFAULT 3,
     created_at TEXT NOT NULL
 );
 
@@ -91,10 +92,37 @@ def init_db():
     with _lock:
         for stmt in _schema_statements():
             _exec_until_ok(stmt)
+        _migrate_users_columns()
 
 
 def _schema_statements():
-    return [s.strip() for s in _schema().split(";") if s.strip()]
+    stmts = [s.strip() for s in _schema().split(";") if s.strip()]
+    if USE_POSTGRES:
+        stmts.append(
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS reminder_days INTEGER NOT NULL DEFAULT 3"
+        )
+    return stmts
+
+
+def _migrate_users_columns():
+    """SQLite: ALTER TABLE не поддерживает IF NOT EXISTS — проверяем PRAGMA."""
+    if USE_POSTGRES:
+        return
+    last = None
+    for attempt in range(5):
+        conn = get_conn()
+        try:
+            cols = {r["name"] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
+            if "reminder_days" not in cols:
+                conn.execute("ALTER TABLE users ADD COLUMN reminder_days INTEGER NOT NULL DEFAULT 3")
+            conn.commit()
+            return
+        except DB_ERRORS as e:
+            last = e
+            time.sleep(1 + attempt)
+        finally:
+            conn.close()
+    raise last
 
 
 def _exec_until_ok(stmt, attempts=5):

@@ -5,7 +5,7 @@ import time
 from db import db, now_iso, _is_schema_not_ready
 from notify import send_charge_reminder
 
-REMINDER_DAYS = 3
+REMINDER_DAYS_DEFAULT = 3
 _CHECK_INTERVAL = 3600  # раз в час
 
 
@@ -15,7 +15,7 @@ def _run_cycle():
         rows = conn.execute(
             """
             SELECT s.id, s.user_id, s.name, s.amount, s.currency, s.category,
-                   s.next_date, s.last_notify, u.telegram_chat_id, u.premium
+                   s.next_date, s.last_notify, u.telegram_chat_id, u.premium, u.reminder_days
             FROM subscriptions s
             JOIN users u ON u.id = s.user_id
             WHERE s.next_date IS NOT NULL AND s.next_date != ''
@@ -26,11 +26,12 @@ def _run_cycle():
         for r in rows:
             if not r["premium"] or not r["telegram_chat_id"]:
                 continue
+            days_ahead = r["reminder_days"] or REMINDER_DAYS_DEFAULT
             try:
                 delta = (datetime.date.fromisoformat(r["next_date"]) - datetime.date.today()).days
             except ValueError:
                 continue
-            if not (0 <= delta <= REMINDER_DAYS):
+            if not (0 <= delta <= days_ahead):
                 continue
             if r["last_notify"] == today:
                 continue

@@ -7,7 +7,7 @@ import uuid
 
 from fastapi import FastAPI, Depends, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, EmailStr
 
 import auth as auth_util
@@ -51,6 +51,10 @@ class SubIn(BaseModel):
 
 class TelegramIn(BaseModel):
     telegram_chat_id: str
+
+
+class ReminderIn(BaseModel):
+    reminder_days: int
 
 
 def current_user(authorization: str = Header(default="")):
@@ -159,6 +163,7 @@ def me(user: dict = Depends(current_user)):
         "premium": bool(user["premium"]),
         "premium_until": user["premium_until"],
         "telegram_chat_id": user["telegram_chat_id"],
+        "reminder_days": user.get("reminder_days", 3),
         "subscriptions": [dict(s) for s in subs],
     }
 
@@ -343,14 +348,51 @@ def set_telegram(body: TelegramIn, user: dict = Depends(current_user)):
     return {"ok": True}
 
 
+@app.put("/api/settings/reminder")
+@retry_db
+def set_reminder(body: ReminderIn, user: dict = Depends(current_user)):
+    if not user["premium"]:
+        raise HTTPException(403, "Доступно только для Premium")
+    if body.reminder_days not in (1, 3, 7):
+        raise HTTPException(400, "Допустимо: 1, 3 или 7 дней")
+    with db() as conn:
+        conn.execute("UPDATE users SET reminder_days=? WHERE id=?", (body.reminder_days, user["id"]))
+    return {"ok": True}
+
+
 @app.get("/api/export")
 @retry_db
-def export(user: dict = Depends(current_user)):
+def export(format: str = "json", user: dict = Depends(current_user)):
     with db() as conn:
         subs = conn.execute(
             "SELECT name, amount, currency, period, category, next_date FROM subscriptions WHERE user_id=?",
             (user["id"],),
         ).fetchall()
+    if format == "csv":
+        import csv
+        import io
+
+        buf = io.StringIO()
+        buf.write("\ufeff")
+        w = csv.writer(buf, delimiter=";")
+        w.writerow(["Название", "Сумма", "Валюта", "Периодичность", "Категория", "Следующее списание"])
+        for s in subs:
+            period = "Ежемесячно" if s["period"] == "monthly" else "Ежегодно"
+            w.writerow([
+                s["name"],
+                f"{float(s['amount']):.2f}".replace(".", ","),
+                s["currency"],
+                period,
+                s["category"],
+                s["next_date"],
+            ])
+        return Response(
+            content=buf.getvalue(),
+            media_type="text/csv; charset=utf-8",
+            headers={
+                "Content-Disposition": f'attachment; filename="subtrack-export-{datetime.date.today().isoformat()}.csv"'
+            },
+        )
     payload = {
         "email": user["email"],
         "premium": bool(user["premium"]),
