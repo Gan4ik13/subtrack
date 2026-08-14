@@ -30,8 +30,40 @@
   :root{ --bg:#0b0c10; --surface:#15161d; --surface-2:#1c1e29; --border:#272a38; --text-primary:#f1f2f6; --text-secondary:#9497a8; --text-muted:#5c5f70; --accent:#6366f1; }
   html,body{ background:var(--bg); color:var(--text-primary); font-family:'Inter',sans-serif; }
 </style>
+<script>
+  /* Apply saved theme before first paint to avoid flash */
+  (function () {
+    try {
+      if (localStorage.getItem('subping-theme') === 'light') {
+        document.documentElement.dataset.theme = 'light';
+      }
+    } catch (e) {}
+  })();
+</script>
+<style>
+  /* === Light theme === */
+  :root[data-theme="light"]{
+    --bg:#f4f5fa; --surface:#ffffff; --surface-2:#edf0f6; --border:#e2e5ee;
+    --text-primary:#17181f; --text-secondary:#565b6a; --text-muted:#9499a8;
+    --accent:#5b54e8; --accent-400:#6f6bf2; --accent-hover:#4f46e5;
+  }
+  [data-theme="light"] .bg-surface{ background-color:var(--surface); }
+  [data-theme="light"] .bg-surface-2{ background-color:var(--surface-2); }
+  [data-theme="light"] .border-border{ border-color:var(--border); }
+  [data-theme="light"] .bg-accent{ background-color:var(--accent); }
+  [data-theme="light"] .text-accent{ color:var(--accent); }
+  [data-theme="light"] .hover\:text-accent:hover{ color:var(--accent); }
+  [data-theme="light"] .hover\:border-accent\/50:hover{ border-color:color-mix(in srgb, var(--accent) 50%, transparent); }
+  .icon-moon{ display:none; }
+  :root[data-theme="light"] .icon-moon{ display:block; }
+  :root[data-theme="light"] .icon-sun{ display:none; }
+</style>
 </head>
 <body class="min-h-screen antialiased">
+  <button type="button" data-theme-toggle class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Сменить тему">
+    <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="#9497a8" stroke-width="1.7"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/></svg>
+    <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" stroke="#9497a8" stroke-width="1.7" stroke-linejoin="round"/></svg>
+  </button>
   <div class="max-w-2xl mx-auto px-4 py-10">
     <a href="index.html" class="inline-flex items-center gap-2 mb-8">
       <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
@@ -84,5 +116,14 @@
 
     <p class="text-center mt-6"><a href="index.html" class="text-xs text-[var(--text-secondary)] hover:text-accent transition-colors">← На главную</a></p>
   </div>
+  <script>
+    document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var dark = document.documentElement.dataset.theme !== 'light';
+        if (dark) { document.documentElement.dataset.theme = 'light'; localStorage.setItem('subping-theme', 'light'); }
+        else { delete document.documentElement.dataset.theme; localStorage.setItem('subping-theme', 'dark'); }
+      });
+    });
+  </script>
 </body>
 </html>
