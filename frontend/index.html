@@ -453,7 +453,10 @@
 
 <!-- ======================= MODAL: PREMIUM / PAYMENT ======================= -->
 <div id="payment-modal" class="hidden fixed inset-0 z-[95] items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
-  <div class="bg-surface w-full sm:max-w-sm sm:rounded-3xl rounded-t-3xl border border-border shadow-card p-6 fade-in">
+  <div class="relative bg-surface w-full sm:max-w-sm sm:rounded-3xl rounded-t-3xl border border-border shadow-card p-6 fade-in">
+    <button type="button" data-action="close-payment" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center" aria-label="Закрыть">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#9497a8" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
     <div id="payment-modal-body"></div>
   </div>
 </div>
@@ -780,7 +783,7 @@ class App {
       btn.addEventListener('click', () => this.openSubModal());
     });
     document.getElementById('subscription-modal').addEventListener('click', e => {
-      if (e.target.id === 'subscription-modal' || e.target.dataset.action === 'close-sub-modal') this.closeSubModal();
+      if (e.target.id === 'subscription-modal' || e.target.closest('[data-action="close-sub-modal"]')) this.closeSubModal();
     });
     this.el.subForm.addEventListener('submit', e => this.handleSubSubmit(e));
     this.el.subDelete.addEventListener('click', () => this.deleteSubscription(this.state.editingSubId));
@@ -798,15 +801,16 @@ class App {
     document.querySelectorAll('a[href*=".html"]').forEach(a => a.addEventListener('click', () => this.forwardTheme(a)));
 
     this.el.paymentModal.addEventListener('click', e => {
-      if (e.target.id === 'payment-modal') this.closePaymentModal();
+      if (e.target.id === 'payment-modal' || e.target.closest('[data-action="close-payment"]')) this.closePaymentModal();
     });
 
     document.querySelectorAll('[data-doc]').forEach(btn => {
       btn.addEventListener('click', () => this.openDoc(btn.dataset.doc));
     });
     this.el.docModal.addEventListener('click', e => {
-      if (e.target.id === 'doc-modal' || e.target.dataset.action === 'close-doc') this.closeDoc();
-      if (e.target.dataset.doc) this.openDoc(e.target.dataset.doc);
+      if (e.target.id === 'doc-modal' || e.target.closest('[data-action="close-doc"]')) this.closeDoc();
+      const docBtn = e.target.closest('[data-doc]');
+      if (docBtn) this.openDoc(docBtn.dataset.doc);
     });
   }
 
@@ -1470,7 +1474,7 @@ class App {
     const href = a.getAttribute('href') || '';
     if (!href || href.indexOf('://') !== -1 || !/\.html($|\?)/.test(href) || /[?&]theme=/.test(href)) return;
     const theme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
-    a.setAttribute('href', href + (href.indexOf('?') === -1 ? '?' : '&') + 'theme=' + theme + '&v=2');
+    a.setAttribute('href', href + (href.indexOf('?') === -1 ? '?' : '&') + 'theme=' + theme + '&v=3');
   }
 
   /* ----------------------------- Уведомления ----------------------------- */
