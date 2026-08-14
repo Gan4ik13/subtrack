@@ -34,6 +34,9 @@
   /* Apply saved theme before first paint to avoid flash */
   (function () {
     try {
+      var p = new URLSearchParams(location.search);
+      var t = p.get('theme');
+      if (t === 'light' || t === 'dark') { localStorage.setItem('subping-theme', t); }
       if (localStorage.getItem('subping-theme') === 'light') {
         document.documentElement.dataset.theme = 'light';
       }
