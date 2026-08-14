@@ -52,7 +52,7 @@ def _yookassa_create_payment(payment: dict, customer_email: str = "") -> dict:
             "customer": {"email": customer_email},
             "items": [
                 {
-                    "description": "SubTrack Premium (1 месяц)",
+                    "description": "SubPing Premium (1 месяц)",
                     "quantity": "1.00",
                     "amount": {"value": f"{payment['amount']:.2f}", "currency": "RUB"},
                     "vat_code": YOOKASSA_VAT_CODE,
@@ -150,7 +150,7 @@ def build_payment_form_html(payment) -> str:
 </head>
 <body>
   <div class="card">
-    <h1>Оплата подписки SubTrack</h1>
+    <h1>Оплата подписки SubPing</h1>
     <div class="price">{amount} &#8381;</div>
     <p>Сейчас вы перейдёте на страницу ЮMoney для подтверждения перевода.</p>
     <form id="payform" method="GET" action="https://yoomoney.ru/quickpay/confirm">

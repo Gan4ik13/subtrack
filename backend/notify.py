@@ -26,7 +26,7 @@ def send_telegram(chat_id: str, text: str) -> bool:
 def send_charge_reminder(chat_id: str, sub) -> None:
     date_str = sub["next_date"]
     text = (
-        f"📅 <b>SubTrack: скоро списание</b>\n\n"
+        f"📅 <b>SubPing: скоро списание</b>\n\n"
         f"<b>{sub['name']}</b> — {sub['amount']:.2f} {sub['currency']}\n"
         f"Категория: {sub['category']}\n"
         f"Списание: {date_str}\n\n"
@@ -37,7 +37,7 @@ def send_charge_reminder(chat_id: str, sub) -> None:
 
 def send_premium_confirmation(chat_id: str, until: str) -> None:
     text = (
-        f"🎉 <b>SubTrack Premium активирован!</b>\n\n"
+        f"🎉 <b>SubPing Premium активирован!</b>\n\n"
         f"Открыты все функции: безлимит подписок, аналитика расходов, "
         f"ближайшие списания и напоминания о платежах.\n"
         f"Premium активен до {until or 'бессрочно'}."
@@ -47,7 +47,7 @@ def send_premium_confirmation(chat_id: str, until: str) -> None:
 
 def send_owner_payment_notice(user_email: str, amount: float, until: str, sender: str = "") -> None:
     text = (
-        f"💰 <b>Оплата SubTrack Premium</b>\n\n"
+        f"💰 <b>Оплата SubPing Premium</b>\n\n"
         f"Пользователь: {user_email}\n"
         f"Сумма: {amount:.2f} ₽\n"
         f"Premium до: {until or 'бессрочно'}\n"

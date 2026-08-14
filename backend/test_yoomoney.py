@@ -13,7 +13,7 @@ os.environ["YOOMONEY_WALLET"] = "4100112345678901"
 os.environ["YOOMONEY_NOTIFY_SECRET"] = "secret123"
 os.environ["FRONTEND_ORIGIN"] = "https://gan4ik13.github.io"
 if "DATABASE_URL" not in os.environ:
-    os.environ["SUBTRAK_DB"] = os.path.join(tempfile.gettempdir(), "subtrack_test_yoomoney.db")
+    os.environ["SUBTRAK_DB"] = os.path.join(tempfile.gettempdir(), f"subtrack_test_yoomoney_{os.getpid()}.db")
 
 import payments as pay
 from db import db as db_ctx

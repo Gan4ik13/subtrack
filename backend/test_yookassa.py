@@ -14,7 +14,7 @@ os.environ["YOOKASSA_SHOP_ID"] = "123456"
 os.environ["YOOKASSA_SECRET_KEY"] = "test_secret_key"
 os.environ["FRONTEND_ORIGIN"] = "https://gan4ik13.github.io"
 if "DATABASE_URL" not in os.environ:
-    os.environ["SUBTRAK_DB"] = os.path.join(tempfile.gettempdir(), "subtrack_test_yookassa.db")
+    os.environ["SUBTRAK_DB"] = os.path.join(tempfile.gettempdir(), f"subtrack_test_yookassa_{os.getpid()}.db")
 
 import payments as pay
 from db import db as db_ctx
@@ -83,7 +83,7 @@ assert body["amount"] == {"value": "15.00", "currency": "RUB"}
 assert body["capture"] is True
 assert body["confirmation"]["type"] == "redirect"
 assert body["receipt"]["customer"]["email"] == "buyer@example.com"
-assert body["receipt"]["items"][0]["description"] == "SubTrack Premium (1 месяц)"
+assert body["receipt"]["items"][0]["description"] == "SubPing Premium (1 месяц)"
 assert body["receipt"]["items"][0]["vat_code"] == "1"
 hdr = CAPTURED_CREATE_BODY["headers"]
 assert hdr["Authorization"].startswith("Basic ")

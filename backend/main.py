@@ -16,7 +16,7 @@ import payments as pay
 from db import db, init_db, insert_get_id, now_iso, retry_db
 from scheduler import start_scheduler
 
-app = FastAPI(title="SubTrack API")
+app = FastAPI(title="SubPing API")
 
 OWNER_EMAIL = os.environ.get("OWNER_EMAIL", "").strip().lower()
 
@@ -466,7 +466,7 @@ def export(format: str = "json", user: dict = Depends(current_user)):
             content=buf.getvalue(),
             media_type="text/csv; charset=utf-8",
             headers={
-                "Content-Disposition": f'attachment; filename="subtrack-export-{datetime.date.today().isoformat()}.csv"'
+                "Content-Disposition": f'attachment; filename="subping-export-{datetime.date.today().isoformat()}.csv"'
             },
         )
     payload = {
@@ -478,7 +478,7 @@ def export(format: str = "json", user: dict = Depends(current_user)):
     }
     return JSONResponse(
         content=payload,
-        headers={"Content-Disposition": f'attachment; filename="subtrack-export-{datetime.date.today().isoformat()}.json"'},
+        headers={"Content-Disposition": f'attachment; filename="subping-export-{datetime.date.today().isoformat()}.json"'},
     )
 
 
