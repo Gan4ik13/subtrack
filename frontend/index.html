@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>SubPing — трекер подписок</title>
+<meta name="description" content="SubPing — трекер подписок: учитывайте списания, планируйте расходы и получайте напоминания в Telegram. Бесплатно до 3 подписок, Premium 15 ₽/мес.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SubPing">
+<meta property="og:title" content="SubPing — трекер подписок">
+<meta property="og:description" content="Учитывайте подписки, следите за списаниями и получайте напоминания в Telegram. Бесплатно до 3 подписок, Premium 15 ₽/мес.">
+<meta property="og:url" content="https://gan4ik13.github.io/subtrack/">
+<meta property="og:image" content="https://gan4ik13.github.io/subtrack/og-image.png">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -96,7 +103,7 @@
         <button type="submit" id="auth-submit" class="mt-2 bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5">Войти</button>
       </form>
     </div>
-    <p class="text-center text-xs text-[var(--text-muted)] mt-6">Данные хранятся на сервере</p>
+    <p class="text-center text-xs text-[var(--text-muted)] mt-6">Данные в безопасности · Синхронизация между устройствами</p>
 
     <!-- Pricing -->
     <div class="mt-6 bg-surface border border-border rounded-2xl shadow-card p-5 fade-in">
@@ -239,7 +246,7 @@
     <!-- Telegram notifications -->
     <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
       <p class="text-sm font-semibold mb-1">Telegram-уведомления</p>
-      <p class="text-[11px] text-[var(--text-secondary)] mb-3">Напоминания о списаниях приходят в личку бота. Укажите ваш числовой ID — узнать можно у <span class="text-accent-400">@userinfobot</span>. Период напоминания настраивается в карточке Premium.</p>
+      <p class="text-[11px] text-[var(--text-secondary)] mb-3">Напоминания о списаниях приходят в личку бота. Укажите ваш числовой ID — узнать можно у <a href="https://t.me/userinfobot" target="_blank" rel="noopener" class="text-accent-400 underline">@userinfobot</a>. Период напоминания настраивается в карточке Premium.</p>
       <div class="flex gap-2">
         <input type="text" id="tg-chat-id" placeholder="Например, 123456789" class="flex-1 rounded-xl px-3.5 py-2.5 text-sm min-w-0">
         <button type="button" id="tg-save" class="shrink-0 text-xs font-semibold bg-accent hover:bg-accent-hover text-white px-3.5 py-2 rounded-lg transition-colors">Сохранить</button>
@@ -854,7 +861,7 @@ class App {
 
   formatCurrencyMap(map) {
     const entries = Object.entries(map).filter(([, v]) => v > 0.004);
-    if (!entries.length) return '—';
+    if (!entries.length) return '0 ₽';
     return entries.map(([cur, v]) => `${this.formatNumber(v)} ${App.CURRENCY_SYMBOL[cur] || cur}`).join(' + ');
   }
 
