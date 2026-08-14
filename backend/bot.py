@@ -59,14 +59,20 @@ def _handle_update(update):
             _send(chat_id, "Не удалось распознать ссылку. Откройте бота из раздела «Подключить через бота» на сайте.")
             return
         with db() as conn:
-            user = conn.execute("SELECT id FROM users WHERE id = ?", (uid,)).fetchone()
+            user = conn.execute("SELECT id, email FROM users WHERE id = ?", (uid,)).fetchone()
             if not user:
                 _send(chat_id, "Аккаунт не найден. Проверьте ссылку или зарегистрируйтесь на сайте.")
                 return
+            conn.execute("UPDATE users SET telegram_chat_id = NULL WHERE telegram_chat_id = ? AND id <> ?", (chat_id, uid))
             conn.execute("UPDATE users SET telegram_chat_id = ? WHERE id = ?", (chat_id, uid))
-        _send(chat_id, "✅ Подключено! Напоминания о списаниях будут приходить сюда.\n\nСменить аккаунт можно в настройках SubPing.")
+        _send(chat_id, f"✅ Подключено! Напоминания о списаниях для аккаунта {user['email']} будут приходить сюда.\n\nСменить аккаунт можно в настройках SubPing.")
     else:
-        _send(chat_id, "Привет! Я бот SubPing.\n\nЧтобы получать напоминания о списаниях:\n1. Зайдите на сайт\n2. В настройках нажмите «Подключить через бота»\n3. Я привяжу ваш Telegram к аккаунту.")
+        with db() as conn:
+            bound = conn.execute("SELECT email FROM users WHERE telegram_chat_id = ?", (chat_id,)).fetchone()
+        if bound:
+            _send(chat_id, f"Этот Telegram подключён к аккаунту {bound['email']}. Управлять подписками и напоминаниями можно на сайте SubPing.\n\nСменить аккаунт — в настройках на сайте: «Подключить через бота».")
+        else:
+            _send(chat_id, "Привет! Я бот SubPing.\n\nЧтобы получать напоминания о списаниях:\n1. Зайдите на сайт\n2. В настройках нажмите «Подключить через бота»\n3. Я привяжу ваш Telegram к аккаунту.")
 
 
 def _poll_once(offset):
