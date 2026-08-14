@@ -12,17 +12,86 @@ YOOMONEY_NOTIFY_SECRET = os.environ.get("YOOMONEY_NOTIFY_SECRET", "")
 CRYPTOPAY_TOKEN = os.environ.get("CRYPTOPAY_TOKEN", "")
 CRYPTOPAY_ASSET = os.environ.get("CRYPTOPAY_ASSET", "USDT")
 CRYPTOPAY_FIAT = os.environ.get("CRYPTOPAY_FIAT", "RUB")
+YOOKASSA_SHOP_ID = os.environ.get("YOOKASSA_SHOP_ID", "")
+YOOKASSA_SECRET_KEY = os.environ.get("YOOKASSA_SECRET_KEY", "")
+YOOKASSA_VAT_CODE = os.environ.get("YOOKASSA_VAT_CODE", "1")
 
 PRICE_RUB = float(os.environ.get("PRICE_RUB", "15"))
 PAYMENT_MODE = os.environ.get("PAYMENT_MODE", "manual")
 
 
-def build_payment_url(payment, base_url: str = "") -> str:
+def _yookassa_headers(idempotency_key: str = "") -> dict:
+    token = secrets.token_hex(8)
+    return {
+        "Authorization": "Basic " + base64_basic(YOOKASSA_SHOP_ID + ":" + YOOKASSA_SECRET_KEY),
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotency_key or token,
+    }
+
+
+def base64_basic(s: str) -> str:
+    import base64
+    return base64.b64encode(s.encode("utf-8")).decode("ascii")
+
+
+def _yookassa_create_payment(payment: dict, customer_email: str = "") -> dict:
+    """Создаёт платёж в ЮKassa. Возвращает invoice с confirmation_url."""
+    url = "https://api.yookassa.ru/v3/payments"
+    return_url = os.environ.get("FRONTEND_ORIGIN", "https://gan4ik13.github.io").split(",")[0].strip()
+    return_url = return_url.rstrip("/") + "/"
+    body = {
+        "amount": {"value": f"{payment['amount']:.2f}", "currency": "RUB"},
+        "capture": True,
+        "confirmation": {"type": "redirect", "return_url": return_url},
+        "description": payment["comment"][:128],
+        "metadata": {"payment_id": payment["id"], "comment": payment["comment"]},
+    }
+    if customer_email:
+        # receipt — основа для автоматического чека ФНС (самозанятый)
+        body["receipt"] = {
+            "customer": {"email": customer_email},
+            "items": [
+                {
+                    "description": "SubTrack Premium (1 месяц)",
+                    "quantity": "1.00",
+                    "amount": {"value": f"{payment['amount']:.2f}", "currency": "RUB"},
+                    "vat_code": YOOKASSA_VAT_CODE,
+                }
+            ],
+        }
+    resp = requests.post(url, headers=_yookassa_headers(), json=body, timeout=30)
+    if resp.status_code not in (200, 201, 202):
+        raise RuntimeError(f"YooKassa create error {resp.status_code}: {resp.text[:300]}")
+    data = resp.json()
+    confirmation = data.get("confirmation", {})
+    if data.get("status") in ("succeeded", "waiting_for_capture") and confirmation.get("confirmation_url"):
+        return data
+    raise RuntimeError(f"YooKassa: не получен confirmation_url: {data}")
+
+
+def _yookassa_check(payment: dict) -> bool:
+    if not payment.get("external_id"):
+        return False
+    resp = requests.get(
+        f"https://api.yookassa.ru/v3/payments/{payment['external_id']}",
+        headers=_yookassa_headers(),
+        timeout=30,
+    )
+    if resp.status_code != 200:
+        return False
+    return resp.json().get("status") == "succeeded"
+
+
+def build_payment_url(payment, base_url: str = "", customer_email: str = "") -> str:
     """Возвращает URL, на который уводим пользователя для оплаты."""
     if PAYMENT_MODE == "yoomoney":
         # Открываем внутреннюю страницу с POST-формой на yoomoney.ru/quickpay/confirm
         # (старый GET-линк quick-pay-form?quickpay-form=small удалён ЮMoney).
         return f"{base_url.rstrip('/')}/api/payment/pay/{payment['id']}"
+    if PAYMENT_MODE == "yookassa":
+        invoice = _yookassa_create_payment(payment, customer_email=customer_email)
+        payment["external_id"] = invoice["id"]
+        return invoice["confirmation"]["confirmation_url"]
     if PAYMENT_MODE == "cryptopay":
         invoice = _cryptopay_create_invoice(payment)
         payment["external_id"] = invoice["invoice_id"]
@@ -121,6 +190,8 @@ def check_payment(payment) -> bool:
     """Проверяет, оплачен ли платёж. Возвращает True если оплачен."""
     if PAYMENT_MODE == "yoomoney":
         return _yoomoney_check(payment)
+    if PAYMENT_MODE == "yookassa":
+        return _yookassa_check(payment)
     if PAYMENT_MODE == "cryptopay":
         return _cryptopay_check(payment)
     return False

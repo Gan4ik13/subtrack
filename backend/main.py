@@ -255,7 +255,7 @@ def create_payment(user: dict = Depends(current_user), request: Request = None):
         )
     payment = {"id": pid, "comment": comment, "amount": pay.PRICE_RUB}
     try:
-        pay_url = pay.build_payment_url(payment, base_url=str(request.base_url))
+        pay_url = pay.build_payment_url(payment, base_url=str(request.base_url), customer_email=user["email"])
     except Exception as e:
         raise HTTPException(502, f"Не удалось создать платёж: {e}")
     with db() as conn:
@@ -347,6 +347,52 @@ def _activate_premium_by_label(label: str, meta: dict = None) -> None:
             )
         until = conn.execute("SELECT premium_until FROM users WHERE id=?", (p["user_id"],)).fetchone()["premium_until"]
     _notify_payment(user, p, until)
+
+
+@retry_db
+def _activate_premium_by_external(external_id: str, meta: dict = None) -> None:
+    """Активирует Premium по external_id (платёж ЮKassa/CryptoPay)."""
+    with db() as conn:
+        p = conn.execute(
+            "SELECT * FROM payments WHERE external_id = ? AND status != 'paid'", (external_id,)
+        ).fetchone()
+        if not p:
+            return
+        user = conn.execute("SELECT * FROM users WHERE id=?", (p["user_id"],)).fetchone()
+        activate_premium(conn, p["user_id"])
+        if meta:
+            conn.execute(
+                "UPDATE payments SET status='paid', verified_at=?, operation_id=?, sender=?, paid_amount=? WHERE id=?",
+                (now_iso(), meta.get("operation_id"), meta.get("sender"), meta.get("amount"), p["id"]),
+            )
+        else:
+            conn.execute(
+                "UPDATE payments SET status='paid', verified_at=? WHERE id=?",
+                (now_iso(), p["id"]),
+            )
+        until = conn.execute("SELECT premium_until FROM users WHERE id=?", (p["user_id"],)).fetchone()["premium_until"]
+    _notify_payment(user, p, until)
+
+
+@app.post("/api/payments/yookassa/notify")
+async def yookassa_notify(request: Request):
+    """HTTP-уведомление ЮKassa о событии платежа. Активирует Premium по payment.id."""
+    raw = (await request.body()).decode("utf-8")
+    try:
+        data = json.loads(raw)
+    except Exception:
+        raise HTTPException(400, "Invalid JSON")
+    obj = data.get("object") or {}
+    if data.get("event") != "payment.succeeded" or not obj.get("id"):
+        return {"ok": True}
+    meta = {
+        "operation_id": obj.get("id", ""),
+        "sender": (obj.get("payment_method") or {}).get("type", ""),
+        "amount": (obj.get("amount") or {}).get("value", ""),
+    }
+    external_id = obj.get("id")
+    await asyncio.to_thread(_activate_premium_by_external, external_id, meta)
+    return {"ok": True}
 
 
 @app.post("/api/payments/yoomoney/notify")
