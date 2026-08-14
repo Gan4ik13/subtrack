@@ -4,6 +4,7 @@ import time
 import requests
 
 BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
+OWNER_TG_CHAT_ID = os.environ.get("OWNER_TG_CHAT_ID", "")
 NOTIFY_TG_ENABLED = bool(BOT_TOKEN)
 
 
@@ -32,6 +33,28 @@ def send_charge_reminder(chat_id: str, sub) -> None:
         f"Проверьте, что оплатите вовремя или отмените подписку."
     )
     send_telegram(chat_id, text)
+
+
+def send_premium_confirmation(chat_id: str, until: str) -> None:
+    text = (
+        f"🎉 <b>SubTrack Premium активирован!</b>\n\n"
+        f"Открыты все функции: безлимит подписок, аналитика расходов, "
+        f"ближайшие списания и напоминания о платежах.\n"
+        f"Premium активен до {until or 'бессрочно'}."
+    )
+    send_telegram(chat_id, text)
+
+
+def send_owner_payment_notice(user_email: str, amount: float, until: str, sender: str = "") -> None:
+    text = (
+        f"💰 <b>Оплата SubTrack Premium</b>\n\n"
+        f"Пользователь: {user_email}\n"
+        f"Сумма: {amount:.2f} ₽\n"
+        f"Premium до: {until or 'бессрочно'}\n"
+        f"{('Отправитель: ' + sender) if sender else ''}"
+        f"\nНе забудьте проверить, что чек по самозанятости сформирован."
+    )
+    send_telegram(OWNER_TG_CHAT_ID, text)
 
 
 def send_payment_confirmation(chat_id: str, text: str) -> None:

@@ -5,6 +5,8 @@ if "DATABASE_URL" in os.environ:
     import db
     db.init_db()
 
+os.environ.setdefault("OWNER_EMAIL", "pgtest@example.com")
+
 from fastapi.testclient import TestClient
 import main as app_module
 
@@ -43,8 +45,19 @@ print("login ok")
 
 me = call("GET", "/api/me", token=token)
 assert me["premium"] is False and me["subscriptions"] == []
+assert me["is_owner"] is True
 call("PUT", "/api/settings/reminder", {"reminder_days": 7}, token=token, expect=403)
 print("me ok")
+
+call("GET", "/api/admin/payments", token=token, expect=200)
+print("owner payments ok")
+
+t3 = call("POST", "/api/auth/register", {"email": "other@example.com", "password": "pass123"})
+tok3 = t3["token"]
+me3 = call("GET", "/api/me", token=tok3)
+assert me3["is_owner"] is False
+call("GET", "/api/admin/payments", token=tok3, expect=403)
+print("non-owner blocked ok")
 
 s1 = call("POST", "/api/subscriptions", {"name": "Netflix", "amount": 599, "currency": "RUB", "period": "monthly", "category": "Развлечения", "next_date": "2026-08-16"}, token=token)
 print("sub created:", s1)
@@ -65,6 +78,8 @@ call("POST", f"/api/payment/{p['payment_id']}/confirm", token=token)
 me = call("GET", "/api/me", token=token)
 assert me["premium"] is True
 call("POST", "/api/subscriptions", {"name": "D", "amount": 1, "period": "monthly", "next_date": "2026-09-01"}, token=token)
+admin = call("GET", "/api/admin/payments", token=token)
+assert any(x["email"] == "pgtest@example.com" and x["status"] == "paid" for x in admin["payments"]), admin["payments"]
 print("premium + unlimited ok")
 
 call("PUT", "/api/settings/telegram", {"telegram_chat_id": "123456"}, token=token)

@@ -62,6 +62,9 @@ CREATE TABLE IF NOT EXISTS payments (
     comment TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
     external_id TEXT,
+    operation_id TEXT,
+    sender TEXT,
+    paid_amount REAL,
     created_at TEXT NOT NULL,
     verified_at TEXT,
     FOREIGN KEY(user_id) REFERENCES users(id)
@@ -92,7 +95,7 @@ def init_db():
     with _lock:
         for stmt in _schema_statements():
             _exec_until_ok(stmt)
-        _migrate_users_columns()
+        _migrate_columns()
 
 
 def _schema_statements():
@@ -101,10 +104,13 @@ def _schema_statements():
         stmts.append(
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS reminder_days INTEGER NOT NULL DEFAULT 3"
         )
+        stmts.append("ALTER TABLE payments ADD COLUMN IF NOT EXISTS operation_id TEXT")
+        stmts.append("ALTER TABLE payments ADD COLUMN IF NOT EXISTS sender TEXT")
+        stmts.append("ALTER TABLE payments ADD COLUMN IF NOT EXISTS paid_amount REAL")
     return stmts
 
 
-def _migrate_users_columns():
+def _migrate_columns():
     """SQLite: ALTER TABLE не поддерживает IF NOT EXISTS — проверяем PRAGMA."""
     if USE_POSTGRES:
         return
@@ -112,9 +118,13 @@ def _migrate_users_columns():
     for attempt in range(5):
         conn = get_conn()
         try:
-            cols = {r["name"] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
-            if "reminder_days" not in cols:
+            def cols(table):
+                return {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+            if "reminder_days" not in cols("users"):
                 conn.execute("ALTER TABLE users ADD COLUMN reminder_days INTEGER NOT NULL DEFAULT 3")
+            for col, decl in [("operation_id", "TEXT"), ("sender", "TEXT"), ("paid_amount", "REAL")]:
+                if col not in cols("payments"):
+                    conn.execute(f"ALTER TABLE payments ADD COLUMN {col} {decl}")
             conn.commit()
             return
         except DB_ERRORS as e:

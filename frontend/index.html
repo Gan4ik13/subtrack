@@ -190,6 +190,15 @@
     <!-- Premium -->
     <div id="premium-card" class="bg-surface border border-border rounded-2xl shadow-card p-4"></div>
 
+    <!-- Payments (owner only) -->
+    <div id="payments-card" class="hidden bg-surface border border-border rounded-2xl shadow-card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-sm font-semibold">Платежи</p>
+        <span class="text-[11px] font-bold text-accent-400 bg-accent/10 px-2 py-0.5 rounded-full">Владелец</span>
+      </div>
+      <div id="payments-list" class="flex flex-col gap-2 text-xs"></div>
+    </div>
+
     <!-- Telegram notifications -->
     <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
       <p class="text-sm font-semibold mb-1">Telegram-уведомления</p>
@@ -393,6 +402,8 @@ class App {
       tgInput: document.getElementById('tg-chat-id'),
       tgSave: document.getElementById('tg-save'),
       tgHint: document.getElementById('tg-hint'),
+      paymentsCard: document.getElementById('payments-card'),
+      paymentsList: document.getElementById('payments-list'),
 
       subModal: document.getElementById('subscription-modal'),
       subModalTitle: document.getElementById('sub-modal-title'),
@@ -781,6 +792,9 @@ class App {
     this.el.tgInput.value = user.telegram_chat_id || '';
     this.el.tgHint.classList.add('hidden');
 
+    this.el.paymentsCard.classList.toggle('hidden', !user.is_owner);
+    if (user.is_owner) this.renderAdminPayments();
+
     this.el.premiumCard.innerHTML = user.premium ? `
       <div class="flex items-center justify-between gap-3">
         <div>
@@ -838,6 +852,35 @@ class App {
       this.toast(err.message, 'warning');
       this.renderSettings();
     }
+  }
+
+  async renderAdminPayments() {
+    try {
+      const res = await this.api('/api/admin/payments');
+      this.el.paymentsList.innerHTML = res.payments.length
+        ? res.payments.map(p => this.paymentRowHTML(p)).join('')
+        : '<p class="text-[var(--text-muted)] py-2">Пока нет платежей</p>';
+    } catch (err) {
+      this.el.paymentsList.innerHTML = `<p class="text-[var(--danger)] py-2">${this.escapeHtml(err.message)}</p>`;
+    }
+  }
+
+  paymentRowHTML(p) {
+    const date = (p.verified_at || p.created_at || '').slice(0, 16);
+    const status = p.status === 'paid'
+      ? '<span class="text-[var(--success)] font-semibold">оплачен</span>'
+      : `<span class="text-[var(--warning)] font-semibold">${this.escapeHtml(p.status)}</span>`;
+    return `
+      <div class="flex items-center justify-between gap-2 border border-border rounded-lg px-3 py-2">
+        <div class="min-w-0">
+          <p class="truncate font-medium">${this.escapeHtml(p.email)}</p>
+          <p class="text-[var(--text-muted)] truncate">${date}${p.operation_id ? ' · op ' + this.escapeHtml(p.operation_id) : ''}</p>
+        </div>
+        <div class="text-right shrink-0">
+          <p class="font-bold">${this.formatNumber(p.amount)} ₽</p>
+          ${status}
+        </div>
+      </div>`;
   }
 
   formatDate(isoDate) {

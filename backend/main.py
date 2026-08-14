@@ -11,11 +11,14 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, EmailStr
 
 import auth as auth_util
+import notify
 import payments as pay
 from db import db, init_db, insert_get_id, now_iso, retry_db
 from scheduler import start_scheduler
 
 app = FastAPI(title="SubTrack API")
+
+OWNER_EMAIL = os.environ.get("OWNER_EMAIL", "").strip().lower()
 
 FRONTEND_ORIGINS = [
     o.strip()
@@ -164,8 +167,17 @@ def me(user: dict = Depends(current_user)):
         "premium_until": user["premium_until"],
         "telegram_chat_id": user["telegram_chat_id"],
         "reminder_days": user.get("reminder_days", 3),
+        "is_owner": bool(OWNER_EMAIL) and user["email"].lower() == OWNER_EMAIL,
         "subscriptions": [dict(s) for s in subs],
     }
+
+
+def _notify_payment(user, p, until: str) -> None:
+    """Шлёт уведомления о подтверждённом платеже (после коммита транзакции)."""
+    email = user["email"] if user else "?"
+    notify.send_owner_payment_notice(email, p["amount"], until, sender=(p.get("sender") or ""))
+    if user and user.get("telegram_chat_id"):
+        notify.send_premium_confirmation(user["telegram_chat_id"], until)
 
 
 def _sub_payload(user, body: SubIn):
@@ -286,11 +298,14 @@ def payment_status(pid: str, user: dict = Depends(current_user)):
             paid = False
     if paid:
         with db() as conn:
-            activate_premium(conn, user["id"])
+            user = conn.execute("SELECT * FROM users WHERE id=?", (p["user_id"],)).fetchone()
+            activate_premium(conn, p["user_id"])
             conn.execute(
                 "UPDATE payments SET status='paid', verified_at=? WHERE id=?",
                 (now_iso(), pid),
             )
+            until = conn.execute("SELECT premium_until FROM users WHERE id=?", (p["user_id"],)).fetchone()["premium_until"]
+        _notify_payment(user, p, until)
     return {"status": "paid" if paid else p["status"], "premium": paid}
 
 
@@ -311,17 +326,27 @@ def confirm_payment(pid: str, user: dict = Depends(current_user)):
 
 
 @retry_db
-def _activate_premium_by_label(label: str) -> None:
+def _activate_premium_by_label(label: str, meta: dict = None) -> None:
     with db() as conn:
         p = conn.execute(
             "SELECT * FROM payments WHERE comment = ? AND status != 'paid'", (label,)
         ).fetchone()
-        if p:
-            activate_premium(conn, p["user_id"])
+        if not p:
+            return
+        user = conn.execute("SELECT * FROM users WHERE id=?", (p["user_id"],)).fetchone()
+        activate_premium(conn, p["user_id"])
+        if meta:
+            conn.execute(
+                "UPDATE payments SET status='paid', verified_at=?, operation_id=?, sender=?, paid_amount=? WHERE id=?",
+                (now_iso(), meta.get("operation_id"), meta.get("sender"), meta.get("amount"), p["id"]),
+            )
+        else:
             conn.execute(
                 "UPDATE payments SET status='paid', verified_at=? WHERE id=?",
                 (now_iso(), p["id"]),
             )
+        until = conn.execute("SELECT premium_until FROM users WHERE id=?", (p["user_id"],)).fetchone()["premium_until"]
+    _notify_payment(user, p, until)
 
 
 @app.post("/api/payments/yoomoney/notify")
@@ -335,7 +360,12 @@ async def yoomoney_notify(request: Request):
         return {"ok": True}
     label = params.get("label", "")
     if label:
-        await asyncio.to_thread(_activate_premium_by_label, label)
+        meta = {
+            "operation_id": params.get("operation_id", ""),
+            "sender": params.get("sender", ""),
+            "amount": params.get("amount", ""),
+        }
+        await asyncio.to_thread(_activate_premium_by_label, label, meta)
     return {"ok": True}
 
 
@@ -404,6 +434,25 @@ def export(format: str = "json", user: dict = Depends(current_user)):
         content=payload,
         headers={"Content-Disposition": f'attachment; filename="subtrack-export-{datetime.date.today().isoformat()}.json"'},
     )
+
+
+@app.get("/api/admin/payments")
+@retry_db
+def admin_payments(user: dict = Depends(current_user)):
+    if not (OWNER_EMAIL and user["email"].lower() == OWNER_EMAIL):
+        raise HTTPException(403, "Доступно только владельцу")
+    with db() as conn:
+        rows = conn.execute(
+            """
+            SELECT p.id, p.amount, p.comment, p.status, p.operation_id, p.sender,
+                   p.created_at, p.verified_at, u.email
+            FROM payments p
+            JOIN users u ON u.id = p.user_id
+            ORDER BY p.created_at DESC
+            LIMIT 100
+            """
+        ).fetchall()
+    return {"payments": [dict(r) for r in rows]}
 
 
 def _init_db_background():
