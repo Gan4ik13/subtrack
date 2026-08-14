@@ -11,6 +11,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, EmailStr
 
 import auth as auth_util
+import bot
 import notify
 import payments as pay
 from db import db, init_db, insert_get_id, now_iso, retry_db
@@ -162,6 +163,7 @@ def me(user: dict = Depends(current_user)):
             "SELECT * FROM subscriptions WHERE user_id = ? ORDER BY next_date", (user["id"],)
         ).fetchall()
     return {
+        "id": user["id"],
         "email": user["email"],
         "premium": bool(user["premium"]),
         "premium_until": user["premium_until"],
@@ -169,6 +171,14 @@ def me(user: dict = Depends(current_user)):
         "reminder_days": user.get("reminder_days", 3),
         "is_owner": bool(OWNER_EMAIL) and user["email"].lower() == OWNER_EMAIL,
         "subscriptions": [dict(s) for s in subs],
+    }
+
+
+@app.get("/api/bot/config")
+def bot_config():
+    return {
+        "enabled": bool(notify.BOT_TOKEN),
+        "username": bot.get_bot_username(),
     }
 
 
@@ -520,3 +530,4 @@ def _init_db_background():
 
 _init_db_background()
 start_scheduler()
+bot.start_polling()

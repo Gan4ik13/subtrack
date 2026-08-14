@@ -99,6 +99,10 @@
           <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Пароль</label>
           <input type="password" id="auth-password" required minlength="4" placeholder="Минимум 4 символа" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
         </div>
+        <div id="consent-row" class="hidden items-start gap-2 text-[11px] leading-snug text-[var(--text-secondary)]">
+          <input type="checkbox" id="auth-consent" class="mt-0.5 shrink-0 w-3.5 h-3.5 accent-accent">
+          <label for="auth-consent">Я принимаю <a href="offer.html" target="_blank" rel="noopener" class="text-accent-400 underline">публичную оферту</a> и <a href="privacy_policy.html" target="_blank" rel="noopener" class="text-accent-400 underline">политику конфиденциальности</a></label>
+        </div>
         <p id="auth-error" class="text-xs text-[var(--danger)] hidden"></p>
         <button type="submit" id="auth-submit" class="mt-2 bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5">Войти</button>
       </form>
@@ -133,8 +137,10 @@
     <footer class="mt-8 pb-6 text-center">
       <p class="text-[11px] text-[var(--text-muted)] mb-3">© 2026 SubPing</p>
       <nav class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-[var(--text-secondary)]">
+        <button type="button" data-doc="how" class="hover:text-accent-400 transition-colors">Как это работает</button>
         <button type="button" data-doc="delivery" class="hover:text-accent-400 transition-colors">Оплата и получение</button>
         <a href="offer.html" class="hover:text-accent-400 transition-colors">Публичная оферта</a>
+        <a href="privacy_policy.html" class="hover:text-accent-400 transition-colors">Конфиденциальность</a>
         <a href="requisites.html" class="hover:text-accent-400 transition-colors">Реквизиты</a>
         <button type="button" data-doc="contacts" class="hover:text-accent-400 transition-colors">Контакты</button>
       </nav>
@@ -251,6 +257,7 @@
         <input type="text" id="tg-chat-id" placeholder="Например, 123456789" class="flex-1 rounded-xl px-3.5 py-2.5 text-sm min-w-0">
         <button type="button" id="tg-save" class="shrink-0 text-xs font-semibold bg-accent hover:bg-accent-hover text-white px-3.5 py-2 rounded-lg transition-colors">Сохранить</button>
       </div>
+      <button type="button" id="tg-connect" class="mt-2 w-full text-xs font-semibold border border-border hover:border-accent/50 rounded-xl py-2.5 transition-colors">Подключить через бота</button>
       <p id="tg-hint" class="hidden text-[11px] mt-2 text-[var(--success)]">Сохранено. Бот пришлёт напоминания о списаниях.</p>
     </div>
 
@@ -411,6 +418,34 @@ const DOCS = {
       <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">8. Реквизиты Исполнителя</h4>
       <p>Исполнитель: ${SELLER.name}, ИНН ${SELLER.inn} (самозанятый, НПД). Контакты: ${SELLER.email}, ${SELLER.phone}, Telegram ${SELLER.tg}.`
   },
+  how: {
+    title: 'Как это работает',
+    html: `
+      <div class="flex flex-col gap-4">
+        <div class="flex gap-3">
+          <span class="shrink-0 w-7 h-7 rounded-full bg-accent/15 text-accent text-xs font-bold flex items-center justify-center">1</span>
+          <div>
+            <p class="text-[13px] font-semibold text-[var(--text-primary)]">Добавьте подписки</p>
+            <p class="text-xs mt-0.5">Укажите сервисы (Netflix, Яндекс Плюс, ChatGPT и др.), суммы и даты списаний — сайт посчитает расходы в месяц и в год.</p>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <span class="shrink-0 w-7 h-7 rounded-full bg-accent/15 text-accent text-xs font-bold flex items-center justify-center">2</span>
+          <div>
+            <p class="text-[13px] font-semibold text-[var(--text-primary)]">Получайте напоминания</p>
+            <p class="text-xs mt-0.5">Бот SubPing в Telegram заранее напомнит о списаниях — за 1, 3 или 7 дней (Premium).</p>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <span class="shrink-0 w-7 h-7 rounded-full bg-accent/15 text-accent text-xs font-bold flex items-center justify-center">3</span>
+          <div>
+            <p class="text-[13px] font-semibold text-[var(--text-primary)]">Экономьте на ненужном</p>
+            <p class="text-xs mt-0.5">Аналитика покажет, куда уходят деньги. Отменяйте подписки, которыми не пользуетесь.</p>
+          </div>
+        </div>
+        <p class="text-[11px] text-[var(--text-muted)]">Бесплатно до 3 подписок. Premium — 15 ₽/мес: безлимит, аналитика и Telegram-напоминания.</p>
+      </div>`
+  },
   delivery: {
     title: 'Оплата и получение услуги',
     html: `
@@ -568,6 +603,8 @@ class App {
       authError: document.getElementById('auth-error'),
       authSubmit: document.getElementById('auth-submit'),
       authTabs: document.querySelectorAll('[data-auth-tab]'),
+      consentRow: document.getElementById('consent-row'),
+      authConsent: document.getElementById('auth-consent'),
 
       premiumBadge: document.getElementById('premium-badge'),
       summaryMonthly: document.getElementById('summary-monthly'),
@@ -582,6 +619,7 @@ class App {
       premiumCard: document.getElementById('premium-card'),
       tgInput: document.getElementById('tg-chat-id'),
       tgSave: document.getElementById('tg-save'),
+      tgConnect: document.getElementById('tg-connect'),
       tgHint: document.getElementById('tg-hint'),
       paymentsCard: document.getElementById('payments-card'),
       paymentsList: document.getElementById('payments-list'),
@@ -634,6 +672,7 @@ class App {
     document.querySelector('[data-action="logout"]').addEventListener('click', () => this.logout());
     document.querySelector('[data-action="export-json"]').addEventListener('click', () => this.exportJSON());
     this.el.tgSave.addEventListener('click', () => this.saveTelegram());
+    this.el.tgConnect.addEventListener('click', () => this.connectTelegram());
 
     this.el.paymentModal.addEventListener('click', e => {
       if (e.target.id === 'payment-modal') this.closePaymentModal();
@@ -669,6 +708,8 @@ class App {
       t.classList.toggle('text-[var(--text-secondary)]', !active);
     });
     this.el.authSubmit.textContent = mode === 'login' ? 'Войти' : 'Создать аккаунт';
+    this.el.consentRow.classList.toggle('hidden', mode !== 'register');
+    this.el.consentRow.classList.toggle('flex', mode === 'register');
     this.hideAuthError();
   }
 
@@ -681,6 +722,10 @@ class App {
     const password = this.el.authPassword.value;
     if (!email || !password || password.length < 4) {
       this.showAuthError('Введите email и пароль (минимум 4 символа)');
+      return;
+    }
+    if (this.state.authMode === 'register' && !this.el.authConsent.checked) {
+      this.showAuthError('Подтвердите согласие с офертой и политикой конфиденциальности');
       return;
     }
     this.el.authSubmit.disabled = true;
@@ -1260,6 +1305,23 @@ class App {
   }
 
   /* ----------------------------- Уведомления ----------------------------- */
+  async connectTelegram() {
+    let cfg;
+    try {
+      cfg = await this.api('/api/bot/config');
+    } catch (err) {
+      this.toast(err.message, 'warning');
+      return;
+    }
+    if (!cfg.username) {
+      this.toast('Бот временно недоступен — введите ID вручную', 'warning');
+      return;
+    }
+    const uid = this.state.user.id;
+    window.open(`https://t.me/${cfg.username}?start=connect_${uid}`, '_blank');
+    this.toast('Открыли Telegram — нажмите Start / Запустить', 'info');
+  }
+
   async saveTelegram() {
     const chatId = this.el.tgInput.value.trim();
     try {

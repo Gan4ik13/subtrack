@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Политика конфиденциальности — SubPing</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'sans-serif'] },
+        colors: {
+          accent: { DEFAULT: '#6366f1', 400:'#818cf8' },
+          surface: '#15161d',
+          surface2: '#1c1e29',
+          border: '#272a38'
+        }
+      }
+    }
+  }
+</script>
+<style>
+  :root{ --bg:#0b0c10; --surface:#15161d; --surface-2:#1c1e29; --border:#272a38; --text-primary:#f1f2f6; --text-secondary:#9497a8; --text-muted:#5c5f70; --accent:#6366f1; }
+  html,body{ background:var(--bg); color:var(--text-primary); font-family:'Inter',sans-serif; }
+</style>
+</head>
+<body class="min-h-screen antialiased">
+  <div class="max-w-2xl mx-auto px-4 py-10">
+    <a href="index.html" class="inline-flex items-center gap-2 mb-8">
+      <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <span class="font-bold tracking-tight">SubPing</span>
+    </a>
+
+    <div class="bg-surface border border-border rounded-2xl p-6 sm:p-8 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+      <h1 class="text-base font-bold text-[var(--text-primary)] mb-1">Политика конфиденциальности</h1>
+      <p class="text-xs mb-6">сервиса «SubPing» (трекер подписок)</p>
+
+      <h2 class="text-[13px] font-semibold text-[var(--text-primary)] mt-5 mb-1.5">1. Общие положения</h2>
+      <p>1.1. Настоящая политика определяет порядок обработки персональных данных пользователей сервиса SubPing (далее — «Сервис»), доступного по адресу <b class="text-[var(--text-primary)]">gan4ik13.github.io/subtrack</b>.</p>
+      <p class="mt-2">1.2. Оператор: Гончаров Михаил Владимирович, ИНН 772623564429 (самозанятый, НПД), email <b class="text-[var(--text-primary)]">gan4ik13@yandex.ru</b>.</p>
+
+      <h2 class="text-[13px] font-semibold text-[var(--text-primary)] mt-5 mb-1.5">2. Какие данные обрабатываются</h2>
+      <ul class="mt-1 flex flex-col gap-1.5">
+        <li>• Адрес электронной почты (необходим для входа в аккаунт).</li>
+        <li>• Числовой ID Telegram (только если вы добровольно подключаете уведомления).</li>
+        <li>• Данные о подписках, которые вы вносите сами (название, сумма, периодичность).</li>
+        <li>• Платёжные данные обрабатывает платёжный сервис ЮKassa — мы не видим и не храним номера карт.</li>
+      </ul>
+
+      <h2 class="text-[13px] font-semibold text-[var(--text-primary)] mt-5 mb-1.5">3. Цели обработки</h2>
+      <ul class="mt-1 flex flex-col gap-1.5">
+        <li>• Создание и поддержание аккаунта, хранение ваших данных о подписках.</li>
+        <li>• Отправка напоминаний о списаниях в Telegram (по вашему желанию).</li>
+        <li>• Подтверждение оплаты тарифа Premium.</li>
+      </ul>
+
+      <h2 class="text-[13px] font-semibold text-[var(--text-primary)] mt-5 mb-1.5">4. Хранение и защита</h2>
+      <p>4.1. Данные хранятся на защищённых серверах (база данных PostgreSQL, хостинг Render). Пароли хранятся только в виде необратимой хэш-суммы (PBKDF2) — восстановить исходный пароль невозможно.</p>
+      <p class="mt-2">4.2. Доступ к данным имеет только оператор. Передача данных третьим лицам не осуществляется, кроме случаев, предусмотренных законом.</p>
+
+      <h2 class="text-[13px] font-semibold text-[var(--text-primary)] mt-5 mb-1.5">5. Сроки хранения и удаление</h2>
+      <p>5.1. Данные хранятся, пока существует аккаунт. Вы можете удалить аккаунт и все связанные данные, написав на <b class="text-[var(--text-primary)]">gan4ik13@yandex.ru</b> — данные удаляются в течение 10 рабочих дней.</p>
+
+      <h2 class="text-[13px] font-semibold text-[var(--text-primary)] mt-5 mb-1.5">6. Права пользователя</h2>
+      <ul class="mt-1 flex flex-col gap-1.5">
+        <li>• Получить копию своих данных (экспорт в JSON/CSV в настройках).</li>
+        <li>• Исправить или удалить свои данные.</li>
+        <li>• Отозвать согласие на обработку.</li>
+      </ul>
+
+      <h2 class="text-[13px] font-semibold text-[var(--text-primary)] mt-5 mb-1.5">7. Согласие</h2>
+      <p>Регистрируясь в Сервисе и отмечая чекбокс согласия, вы подтверждаете, что ознакомились с настоящей политикой и <a href="offer.html" class="text-[var(--accent)] underline">публичной офертой</a>.</p>
+
+      <h2 class="text-[13px] font-semibold text-[var(--text-primary)] mt-5 mb-1.5">8. Контакты</h2>
+      <p>По вопросам обработки персональных данных: <b class="text-[var(--text-primary)]">gan4ik13@yandex.ru</b>, Telegram <b class="text-[var(--text-primary)]">@Gan4ik13</b>, телефон <b class="text-[var(--text-primary)]">+7 (977) 564-95-17</b>.</p>
+    </div>
+
+    <p class="text-center mt-6"><a href="index.html" class="text-xs text-[var(--text-secondary)] hover:text-accent transition-colors">← На главную</a></p>
+  </div>
+</body>
+</html>
