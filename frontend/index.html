@@ -94,7 +94,42 @@
         <button type="submit" id="auth-submit" class="mt-2 bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5">Войти</button>
       </form>
     </div>
-    <p class="text-center text-xs text-[var(--text-muted)] mt-6">Данные хранятся на сервере · бесплатно до 3 подписок</p>
+    <p class="text-center text-xs text-[var(--text-muted)] mt-6">Данные хранятся на сервере</p>
+
+    <!-- Pricing -->
+    <div class="mt-6 bg-surface border border-border rounded-2xl shadow-card p-5 fade-in">
+      <p class="text-sm font-bold mb-3">Тарифы</p>
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-[13px] font-semibold">Бесплатный</p>
+            <p class="text-[11px] text-[var(--text-secondary)]">До 3 подписок, базовая статистика, экспорт JSON</p>
+          </div>
+          <span class="shrink-0 text-sm font-bold text-[var(--text-secondary)]">0 ₽</span>
+        </div>
+        <div class="border-t border-border pt-3 flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-[13px] font-semibold flex items-center gap-1.5">Premium
+              <span class="text-[10px] font-bold uppercase tracking-wide bg-accent/15 text-accent px-1.5 py-0.5 rounded-full">популярный</span>
+            </p>
+            <p class="text-[11px] text-[var(--text-secondary)]">Безлимит, аналитика, Telegram-напоминания, CSV</p>
+          </div>
+          <span class="shrink-0 text-sm font-bold">15 ₽<span class="text-[10px] font-normal text-[var(--text-muted)]">/мес</span></span>
+        </div>
+      </div>
+      <button type="button" data-doc="pricing" class="mt-4 w-full text-[11px] font-semibold border border-border hover:border-accent/50 rounded-xl py-2 transition-colors">Подробнее об услуге</button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-8 pb-6 text-center">
+      <p class="text-[11px] text-[var(--text-muted)] mb-3">© 2026 SubTrack</p>
+      <nav class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-[var(--text-secondary)]">
+        <button type="button" data-doc="delivery" class="hover:text-accent-400 transition-colors">Оплата и получение</button>
+        <button type="button" data-doc="offer" class="hover:text-accent-400 transition-colors">Публичная оферта</button>
+        <button type="button" data-doc="requisites" class="hover:text-accent-400 transition-colors">Реквизиты</button>
+        <button type="button" data-doc="contacts" class="hover:text-accent-400 transition-colors">Контакты</button>
+      </nav>
+    </footer>
   </div>
 </section>
 
@@ -296,10 +331,147 @@
   </div>
 </div>
 
+<!-- ======================= MODAL: DOCS (OFFER / REQUISITES / PRICING) ======================= -->
+<div id="doc-modal" class="hidden fixed inset-0 z-[95] items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+  <div class="bg-surface w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl border border-border shadow-card fade-in max-h-[92vh] overflow-y-auto">
+    <div class="sticky top-0 bg-surface z-10 flex items-center justify-between px-6 pt-5 pb-3 border-b border-border">
+      <h2 id="doc-modal-title" class="text-base font-bold"></h2>
+      <button type="button" data-action="close-doc" class="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center" aria-label="Закрыть">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#9497a8" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div id="doc-modal-body" class="px-6 py-5 text-[13px] leading-relaxed text-[var(--text-secondary)]"></div>
+  </div>
+</div>
+
 <script>
 const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
   ? 'http://localhost:8000'
   : 'https://subtrack-api-jszq.onrender.com';
+
+const SELLER = {
+  name: 'Гончаров Михаил Владимирович',
+  inn: '772623564429',
+  phone: '+7 (977) 564-95-17',
+  tg: '@Gan4ik13',
+  email: 'gan4ik13@yandex.ru',
+  domain: 'https://gan4ik13.github.io/subtrack'
+};
+
+const DOCS = {
+  offer: {
+    title: 'Публичная оферта',
+    html: `
+      <h3 class="text-sm font-bold text-[var(--text-primary)] mb-1">ПУБЛИЧНАЯ ОФЕРТА</h3>
+      <p class="text-xs mb-4">об оказании услуг по предоставлению доступа к сервису «SubTrack»</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">1. Общие положения</h4>
+      <p>1.1. Настоящий документ является официальным предложением (публичной офертой) Исполнителя заключить договор об оказании услуг на условиях настоящей оферты (ст. 437 Гражданского кодекса РФ).</p>
+      <p class="mt-2">1.2. Акцептом (принятием) оферты является оплата услуг в порядке, предусмотренном разделом 4. Совершение акцепта означает полное и безоговорочное согласие Пользователя с условиями оферты.</p>
+      <p class="mt-2">1.3. Исполнитель: <span class="text-[var(--text-primary)] font-medium">${SELLER.name}</span>, ИНН <span class="text-[var(--text-primary)] font-medium">${SELLER.inn}</span> — самозанятый, применяет налог на профессиональный доход (НПД).</p>
+      <p class="mt-2">1.4. Сервис «SubTrack» — онлайн-сервис для учёта и отслеживания подписок, доступный по адресу <a href="${SELLER.domain}" target="_blank" rel="noopener" class="text-accent-400 underline">${SELLER.domain}</a>.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">2. Предмет договора</h4>
+      <p>2.1. Исполнитель предоставляет Пользователю доступ к функционалу сервиса «SubTrack».</p>
+      <p class="mt-2">2.2. Бесплатный тариф: до 3 подписок, базовая статистика, экспорт данных в JSON.</p>
+      <p class="mt-2">2.3. Тариф Premium (15 ₽/мес): неограниченное число подписок, аналитика расходов по категориям, ближайшие списания, Telegram-напоминания за 1/3/7 дней, экспорт в CSV.</p>
+      <p class="mt-2">2.4. Услуги оказываются дистанционно через сеть Интернет в электронном виде, без передачи материального носителя.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">3. Стоимость услуг</h4>
+      <p>3.1. Стоимость тарифа Premium — 15 (пятнадцать) рублей за 1 (один) месяц.</p>
+      <p class="mt-2">3.2. Исполнитель вправе изменить стоимость услуг в одностороннем порядке с предварительным информированием Пользователей. Оплаченный по действующим ценам период не изменяется.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">4. Порядок оплаты и активации</h4>
+      <p>4.1. Оплата производится через платёжный сервис ЮKassa (банковские карты, СБП, кошелёк ЮMoney) либо иными способами, указанными на сайте.</p>
+      <p class="mt-2">4.2. Датой акцепта оферты считается дата поступления денежных средств на счёт Исполнителя.</p>
+      <p class="mt-2">4.3. Доступ к тарифу Premium активируется автоматически после поступления оплаты в течение нескольких минут. Срок действия отсчитывается с момента активации.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">5. Права и обязанности сторон</h4>
+      <p>5.1. Исполнитель обязуется обеспечить работу сервиса, за исключением перерывов на техническое обслуживание и случаев, не зависящих от Исполнителя.</p>
+      <p class="mt-2">5.2. Пользователь обязуется использовать сервис правомерно и не нарушать права третьих лиц.</p>
+      <p class="mt-2">5.3. Пользователь несёт ответственность за сохранность учётных данных своего аккаунта.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">6. Персональные данные</h4>
+      <p>6.1. Персональные данные (email) обрабатываются для предоставления услуг. Оплата обрабатывается платёжным сервисом ЮKassa в соответствии с его правилами.</p>
+      <p class="mt-2">6.2. Совершая акцепт оферты, Пользователь соглашается с обработкой своих персональных данных.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">7. Возврат средств</h4>
+      <p>7.1. Если услуга не была оказана или оказана ненадлежащим образом, Пользователь вправе направить Исполнителю требование о возврате средств на email <span class="text-[var(--text-primary)] font-medium">${SELLER.email}</span>. Возврат производится в течение 10 (десяти) рабочих дней.</p>
+      <p class="mt-2">7.2. Поскольку услуга считается оказанной в момент активации доступа, возврат после фактического оказания услуги не производится, кроме случаев, предусмотренных действующим законодательством РФ.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">8. Реквизиты Исполнителя</h4>
+      <p>Исполнитель: ${SELLER.name}, ИНН ${SELLER.inn} (самозанятый, НПД). Контакты: ${SELLER.email}, ${SELLER.phone}, Telegram ${SELLER.tg}.`
+  },
+  delivery: {
+    title: 'Оплата и получение услуги',
+    html: `
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mb-1.5">Способы оплаты</h4>
+      <p>Оплата производится через платёжный сервис ЮKassa: банковские карты (Мир, Visa, Mastercard), СБП и кошелёк ЮMoney. После оплаты вы получите электронный чек на указанный email.</p>
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">Стоимость</h4>
+      <p>Тариф Premium — <b class="text-[var(--text-primary)]">15 ₽ в месяц</b>. Бесплатный тариф — 0 ₽ (до 3 подписок).</p>
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">Порядок получения услуги</h4>
+      <p>Услуга цифровая и оказывается дистанционно. Физическая доставка не требуется: после поступления оплаты Premium автоматически активируется на вашем аккаунте в течение нескольких минут — доступ открывается в личном кабинете.</p>
+      <p class="mt-2">Если активация не произошла автоматически в течение часа, напишите на <a href="mailto:${SELLER.email}" class="text-accent-400 underline">${SELLER.email}</a> — активируем вручную.</p>`
+  },
+  pricing: {
+    title: 'Тарифы',
+    html: `
+      <div class="flex flex-col gap-3">
+        <div class="border border-border rounded-2xl p-4">
+          <div class="flex items-center justify-between gap-3 mb-1.5">
+            <p class="text-sm font-semibold text-[var(--text-primary)]">Бесплатный</p>
+            <span class="text-sm font-bold text-[var(--text-secondary)]">0 ₽</span>
+          </div>
+          <ul class="text-xs flex flex-col gap-1.5">
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>До 3 подписок</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Итоговая сумма в месяц и в год</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Напоминания о списаниях на сайте</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Экспорт данных в JSON</li>
+          </ul>
+        </div>
+        <div class="border border-accent/40 bg-accent/5 rounded-2xl p-4">
+          <div class="flex items-center justify-between gap-3 mb-1.5">
+            <p class="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-1.5">Premium
+              <span class="text-[10px] font-bold uppercase tracking-wide bg-accent/15 text-accent px-1.5 py-0.5 rounded-full">популярный</span>
+            </p>
+            <span class="text-sm font-bold text-[var(--text-primary)]">15 ₽<span class="text-[10px] font-normal text-[var(--text-muted)]">/мес</span></span>
+          </div>
+          <ul class="text-xs flex flex-col gap-1.5">
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Неограниченное число подписок</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Аналитика расходов по категориям</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Ближайшие списания</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Telegram-напоминания за 1 / 3 / 7 дней</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Экспорт в CSV</li>
+          </ul>
+        </div>
+        <p class="text-[11px] text-[var(--text-muted)]">Оплата через ЮKassa (карты, СБП, ЮMoney). Услуга активируется автоматически после оплаты. <button type="button" data-doc="offer" class="text-accent-400 underline">Публичная оферта</button>.</p>
+      </div>`
+  },
+  requisites: {
+    title: 'Реквизиты',
+    html: `
+      <div class="flex flex-col">
+        <div class="flex items-center justify-between gap-3 border-b border-border py-2.5"><span class="shrink-0 text-[var(--text-muted)]">Исполнитель</span><span class="text-[var(--text-primary)] font-medium text-right">${SELLER.name}</span></div>
+        <div class="flex items-center justify-between gap-3 border-b border-border py-2.5"><span class="shrink-0 text-[var(--text-muted)]">ИНН</span><span class="text-[var(--text-primary)] font-medium">${SELLER.inn}</span></div>
+        <div class="flex items-center justify-between gap-3 border-b border-border py-2.5"><span class="shrink-0 text-[var(--text-muted)]">Статус</span><span class="text-[var(--text-primary)] font-medium text-right">Самозанятый (НПД)</span></div>
+        <div class="flex items-center justify-between gap-3 border-b border-border py-2.5"><span class="shrink-0 text-[var(--text-muted)]">Email</span><a href="mailto:${SELLER.email}" class="text-[var(--text-primary)] font-medium text-accent-400">${SELLER.email}</a></div>
+        <div class="flex items-center justify-between gap-3 border-b border-border py-2.5"><span class="shrink-0 text-[var(--text-muted)]">Телефон</span><span class="text-[var(--text-primary)] font-medium">${SELLER.phone}</span></div>
+        <div class="flex items-center justify-between gap-3 border-b border-border py-2.5"><span class="shrink-0 text-[var(--text-muted)]">Telegram</span><span class="text-[var(--text-primary)] font-medium">${SELLER.tg}</span></div>
+        <div class="flex items-center justify-between gap-3 py-2.5"><span class="shrink-0 text-[var(--text-muted)]">Сайт</span><a href="${SELLER.domain}" target="_blank" rel="noopener" class="text-[var(--text-primary)] font-medium text-accent-400 text-right">${SELLER.domain}</a></div>
+      </div>`
+  },
+  contacts: {
+    title: 'Контакты',
+    html: `
+      <p>По вопросам оплаты, работы сервиса и возврата средств обращайтесь:</p>
+      <div class="flex flex-col gap-2 mt-3">
+        <div class="flex items-center justify-between gap-3 border-b border-border pb-2"><span class="text-[var(--text-muted)]">Email</span><a href="mailto:${SELLER.email}" class="text-accent-400">${SELLER.email}</a></div>
+        <div class="flex items-center justify-between gap-3 border-b border-border pb-2"><span class="text-[var(--text-muted)]">Telegram</span><span class="text-[var(--text-primary)] font-medium">${SELLER.tg}</span></div>
+        <div class="flex items-center justify-between gap-3"><span class="text-[var(--text-muted)]">Телефон</span><span class="text-[var(--text-primary)] font-medium">${SELLER.phone}</span></div>
+      </div>
+      <p class="mt-4 text-xs">Среднее время ответа — до 24 часов.</p>`
+  }
+};
 
 class App {
   static TOKEN_KEY = 'subtrack_token';
@@ -423,6 +595,10 @@ class App {
       paymentModal: document.getElementById('payment-modal'),
       paymentModalBody: document.getElementById('payment-modal-body'),
 
+      docModal: document.getElementById('doc-modal'),
+      docTitle: document.getElementById('doc-modal-title'),
+      docBody: document.getElementById('doc-modal-body'),
+
       toastContainer: document.getElementById('toast-container')
     };
   }
@@ -452,6 +628,14 @@ class App {
 
     this.el.paymentModal.addEventListener('click', e => {
       if (e.target.id === 'payment-modal') this.closePaymentModal();
+    });
+
+    document.querySelectorAll('[data-doc]').forEach(btn => {
+      btn.addEventListener('click', () => this.openDoc(btn.dataset.doc));
+    });
+    this.el.docModal.addEventListener('click', e => {
+      if (e.target.id === 'doc-modal' || e.target.dataset.action === 'close-doc') this.closeDoc();
+      if (e.target.dataset.doc) this.openDoc(e.target.dataset.doc);
     });
   }
 
@@ -1038,6 +1222,21 @@ class App {
     this.el.paymentModal.classList.remove('flex');
     this.state.paymentId = null;
     this.state.paymentManual = false;
+  }
+
+  /* --------------------------------- Документы ------------------------------- */
+  openDoc(key) {
+    const doc = DOCS[key];
+    if (!doc) return;
+    this.el.docTitle.textContent = doc.title;
+    this.el.docBody.innerHTML = doc.html;
+    this.el.docModal.classList.remove('hidden');
+    this.el.docModal.classList.add('flex');
+  }
+
+  closeDoc() {
+    this.el.docModal.classList.add('hidden');
+    this.el.docModal.classList.remove('flex');
   }
 
   spinnerHTML(text) {
