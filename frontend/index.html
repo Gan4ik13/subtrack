@@ -23,7 +23,7 @@
       extend: {
         fontFamily: { sans: ['Inter', 'sans-serif'] },
         colors: {
-          accent: { DEFAULT: '#6366f1', 50:'#eef2ff',100:'#e0e7ff',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca' },
+          accent: { DEFAULT: '#6366f1', hover:'#4f46e5', 50:'#eef2ff',100:'#e0e7ff',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca' },
           surface: '#15161d',
           surface2: '#1c1e29',
           border: '#272a38'
@@ -48,6 +48,7 @@
     --text-secondary:#9497a8;
     --text-muted:#5c5f70;
     --accent:#6366f1;
+    --accent-400:#818cf8;
     --accent-hover:#4f46e5;
     --success:#22c55e;
     --warning:#eab308;
@@ -69,6 +70,53 @@
   .toast{ animation:toastIn .2s ease both; }
   .ring-dot{ box-shadow:0 0 0 3px rgba(255,255,255,.06); }
 </style>
+<script>
+  /* Apply saved theme before first paint to avoid flash */
+  (function () {
+    try {
+      if (localStorage.getItem('subping-theme') === 'light') {
+        document.documentElement.dataset.theme = 'light';
+      }
+    } catch (e) {}
+  })();
+</script>
+<style>
+  /* === Light theme === */
+  :root[data-theme="light"]{
+    --bg:#f4f5fa;
+    --surface:#ffffff;
+    --surface-2:#edf0f6;
+    --border:#e2e5ee;
+    --text-primary:#17181f;
+    --text-secondary:#565b6a;
+    --text-muted:#9499a8;
+    --accent:#5b54e8;
+    --accent-400:#6f6bf2;
+    --accent-hover:#4f46e5;
+  }
+  [data-theme="light"] .bg-surface{ background-color:var(--surface); }
+  [data-theme="light"] .bg-surface-2{ background-color:var(--surface-2); }
+  [data-theme="light"] .bg-surface-2\/60{ background-color:color-mix(in srgb, var(--surface-2) 60%, transparent); }
+  [data-theme="light"] .border-border{ border-color:var(--border); }
+  [data-theme="light"] .bg-accent{ background-color:var(--accent); }
+  [data-theme="light"] .hover\:bg-accent-hover:hover{ background-color:var(--accent-hover); }
+  [data-theme="light"] .text-accent{ color:var(--accent); }
+  [data-theme="light"] .hover\:text-accent:hover{ color:var(--accent); }
+  [data-theme="light"] .text-accent-400{ color:var(--accent-400); }
+  [data-theme="light"] .hover\:text-accent-400:hover{ color:var(--accent-400); }
+  [data-theme="light"] .bg-accent\/10{ background-color:color-mix(in srgb, var(--accent) 10%, transparent); }
+  [data-theme="light"] .bg-accent\/15{ background-color:color-mix(in srgb, var(--accent) 15%, transparent); }
+  [data-theme="light"] .border-accent\/30{ border-color:color-mix(in srgb, var(--accent) 30%, transparent); }
+  [data-theme="light"] .border-accent\/50, [data-theme="light"] .hover\:border-accent\/50:hover{ border-color:color-mix(in srgb, var(--accent) 50%, transparent); }
+  [data-theme="light"] .bg-\[rgba\(11\,12\,16\,\.85\)\]{ background-color:color-mix(in srgb, var(--bg) 85%, transparent); }
+  [data-theme="light"] .shadow-card{ box-shadow:0 1px 2px rgba(15,23,42,.06), 0 8px 24px -12px rgba(15,23,42,.12); }
+  [data-theme="light"] .shadow-glow{ box-shadow:0 0 0 1px rgba(91,84,232,.25), 0 8px 24px -8px rgba(91,84,232,.2); }
+  [data-theme="light"] .card-hover:hover{ border-color:var(--border); }
+  [data-theme="light"] .ring-dot{ box-shadow:0 0 0 3px rgba(15,23,42,.06); }
+  .icon-moon{ display:none; }
+  :root[data-theme="light"] .icon-moon{ display:block; }
+  :root[data-theme="light"] .icon-sun{ display:none; }
+</style>
 </head>
 <body class="min-h-screen antialiased">
 
@@ -76,6 +124,10 @@
 
 <!-- ======================= VIEW: LOGIN ======================= -->
 <section data-view="login" class="min-h-screen flex items-center justify-center px-4 py-10">
+  <button type="button" data-theme-toggle class="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Сменить тему">
+    <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="#9497a8" stroke-width="1.7"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/></svg>
+    <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" stroke="#9497a8" stroke-width="1.7" stroke-linejoin="round"/></svg>
+  </button>
   <div class="w-full max-w-sm fade-in">
     <div class="flex items-center gap-2 justify-center mb-8">
       <div class="w-9 h-9 rounded-xl bg-accent flex items-center justify-center shadow-glow shrink-0">
@@ -161,6 +213,10 @@
         <span id="premium-badge" class="hidden ml-1 text-[10px] font-bold uppercase tracking-wide bg-accent/15 text-accent px-2 py-0.5 rounded-full">Premium</span>
       </div>
       <div class="flex items-center gap-2">
+        <button type="button" data-theme-toggle class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Сменить тему">
+          <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="#9497a8" stroke-width="1.7"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" stroke="#9497a8" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        </button>
         <button type="button" data-doc="how" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Как это работает">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#9497a8" stroke-width="1.7"/><path d="M9.5 9a2.5 2.5 0 114.9.8c-.5 1-1.9 1.5-1.9 2.7" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="#9497a8"/></svg>
         </button>
@@ -241,9 +297,15 @@
   <header class="border-b border-border sticky top-0 z-30 bg-[rgba(11,12,16,.85)] backdrop-blur">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
       <button type="button" data-nav="dashboard" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Назад">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#f1f2f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <span class="font-bold tracking-tight text-[15px]">Настройки</span>
+      <div class="ml-auto">
+        <button type="button" data-theme-toggle class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Сменить тему">
+          <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="#9497a8" stroke-width="1.7"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" stroke="#9497a8" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -715,6 +777,7 @@ class App {
     document.querySelector('[data-action="export-json"]').addEventListener('click', () => this.exportJSON());
     this.el.tgSave.addEventListener('click', () => this.saveTelegram());
     this.el.tgConnect.addEventListener('click', () => this.connectTelegram());
+    document.querySelectorAll('[data-theme-toggle]').forEach(btn => btn.addEventListener('click', () => this.toggleTheme()));
 
     this.el.paymentModal.addEventListener('click', e => {
       if (e.target.id === 'payment-modal') this.closePaymentModal();
@@ -1344,6 +1407,18 @@ class App {
         </svg>
         <p class="text-sm font-medium text-[var(--text-secondary)]">${text}</p>
       </div>`;
+  }
+
+  /* ----------------------------- Тема ----------------------------- */
+  toggleTheme() {
+    const dark = document.documentElement.dataset.theme !== 'light';
+    if (dark) {
+      document.documentElement.dataset.theme = 'light';
+      localStorage.setItem('subping-theme', 'light');
+    } else {
+      delete document.documentElement.dataset.theme;
+      localStorage.setItem('subping-theme', 'dark');
+    }
   }
 
   /* ----------------------------- Уведомления ----------------------------- */
