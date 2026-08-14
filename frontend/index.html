@@ -818,7 +818,17 @@ class App {
   async api(path, options = {}) {
     const headers = { 'Content-Type': 'application/json' };
     if (this.state.token) headers['Authorization'] = 'Bearer ' + this.state.token;
-    const resp = await fetch(API_BASE + path, { ...options, headers });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 25000);
+    let resp;
+    try {
+      resp = await fetch(API_BASE + path, { ...options, headers, signal: controller.signal });
+    } catch (e) {
+      clearTimeout(timer);
+      if (e.name === 'AbortError') throw new Error('Сервер не отвечает. Проверьте интернет и попробуйте ещё раз');
+      throw new Error('Нет связи с сервером. Проверьте интернет-соединение');
+    }
+    clearTimeout(timer);
     let data = {};
     try { data = await resp.json(); } catch (e) {}
     if (resp.status === 401) {
