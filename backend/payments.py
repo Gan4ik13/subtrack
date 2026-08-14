@@ -34,8 +34,9 @@ def build_payment_url(payment, base_url: str = "") -> str:
 def build_payment_form_html(payment) -> str:
     """HTML-страница с формой перевода на кошелёк ЮMoney.
 
-    По актуальным правилам ЮMoney форма отправляется POST-ом на
-    https://yoomoney.ru/quickpay/confirm с полем quickpay-form=button.
+    Форма уходит на https://yoomoney.ru/quickpay/confirm. Используем GET:
+    POST с чужого Referer ЮMoney игнорирует (таймаут), а GET-переход
+    проверенно открывает страницу подтверждения.
     """
     label = payment["comment"][:64]
     amount = f"{payment['amount']:.2f}"
@@ -83,7 +84,7 @@ def build_payment_form_html(payment) -> str:
     <h1>Оплата подписки SubTrack</h1>
     <div class="price">{amount} &#8381;</div>
     <p>Сейчас вы перейдёте на страницу ЮMoney для подтверждения перевода.</p>
-    <form id="payform" method="POST" action="https://yoomoney.ru/quickpay/confirm">
+    <form id="payform" method="GET" action="https://yoomoney.ru/quickpay/confirm">
       {inputs}
       <button type="submit">Перейти к оплате</button>
     </form>

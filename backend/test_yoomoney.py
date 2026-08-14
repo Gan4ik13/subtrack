@@ -53,6 +53,7 @@ print("pay_url:", url)
 assert url == "http://testserver/api/payment/pay/pay123456"
 html = pay.build_payment_form_html(payment)
 assert "https://yoomoney.ru/quickpay/confirm" in html
+assert 'method="GET"' in html
 assert 'name="receiver" value="4100112345678901"' in html
 assert 'name="quickpay-form" value="button"' in html
 assert 'name="paymentType" value="PC"' in html
