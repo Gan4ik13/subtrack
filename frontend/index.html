@@ -603,9 +603,19 @@
 </div>
 
 <script>
-const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-  ? 'http://localhost:8000'
-  : 'https://subtrack-api-jszq.onrender.com';
+const API_BASES = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? ['http://localhost:8000']
+  : location.hostname.endsWith('.ts.net')
+    ? [location.origin]
+    : ['https://subtrack-api-jszq.onrender.com'];
+
+async function loadTunnelBase() {
+  try {
+    const r = await fetch('./tunnel.txt', { cache: 'no-cache' });
+    const t = (await r.text()).trim();
+    if (/^https:\/\/[a-z0-9.-]+\.(?:ts\.net|trycloudflare\.com)$/.test(t) && !API_BASES.includes(t)) API_BASES.push(t);
+  } catch (e) {}
+}
 
 const SELLER = {
   name: 'Гончаров Михаил Владимирович',
@@ -761,6 +771,7 @@ const DOCS = {
 
 class App {
   static TOKEN_KEY = 'subtrack_token';
+  static BASE_KEY = 'subtrack_api_base';
   static FREE_LIMIT = 3;
   static CURRENCY_SYMBOL = { RUB: '₽', USD: '$', EUR: '€' };
 
@@ -799,13 +810,16 @@ class App {
       subs: [],
       payTimer: null
     };
+    this.apiBase = null;
+    this.badBases = new Set();
   }
 
   /* ---------------------------- Инициализация ---------------------------- */
-  init() {
+  async init() {
     this.cacheDom();
     this.bindEvents();
     this.setAuthMode('login');
+    await loadTunnelBase();
     if (this.state.token) {
       this.loadMe()
         .then(() => this.switchView('dashboard'))
@@ -815,20 +829,55 @@ class App {
     }
   }
 
+  async resolveApiBase() {
+    if (this.apiBase && !this.badBases.has(this.apiBase)) return this.apiBase;
+    const cached = localStorage.getItem(App.BASE_KEY);
+    if (cached && API_BASES.includes(cached) && !this.badBases.has(cached)) {
+      this.apiBase = cached;
+      return cached;
+    }
+    for (const base of API_BASES) {
+      if (this.badBases.has(base)) continue;
+      let timer;
+      const controller = new AbortController();
+      try {
+        timer = setTimeout(() => controller.abort(), 5000);
+        const r = await fetch(base + '/api/me', { signal: controller.signal });
+        clearTimeout(timer);
+        if (r.status === 401 || r.ok) {
+          this.apiBase = base;
+          try { localStorage.setItem(App.BASE_KEY, base); } catch (e) {}
+          return base;
+        }
+      } catch (e) {
+        clearTimeout(timer);
+      }
+    }
+    return API_BASES[0];
+  }
+
+  invalidateBase(base) {
+    this.badBases.add(base);
+    if (this.apiBase === base) this.apiBase = null;
+    try { localStorage.removeItem(App.BASE_KEY); } catch (e) {}
+  }
+
   async fetchWithRetry(path, options) {
     const attempts = options._noRetry ? 1 : 2;
     let lastErr;
     for (let i = 0; i < attempts; i++) {
+      const base = await this.resolveApiBase();
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 45000);
+      const timer = setTimeout(() => controller.abort(), 30000);
       try {
-        const resp = await fetch(API_BASE + path, { ...options, signal: controller.signal });
+        const resp = await fetch(base + path, { ...options, signal: controller.signal });
         clearTimeout(timer);
         return resp;
       } catch (e) {
         clearTimeout(timer);
         lastErr = e;
-        if (i < attempts - 1) await new Promise(r => setTimeout(r, 2000));
+        this.invalidateBase(base);
+        if (i < attempts - 1) await new Promise(r => setTimeout(r, 1500));
       }
     }
     if (lastErr.name === 'AbortError') throw new Error('Сервер не отвечает. Проверьте интернет и попробуйте ещё раз');

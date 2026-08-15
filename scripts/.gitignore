@@ -1,0 +1,6 @@
+*.log
+*.log.*
+tunnel_url.txt
+tunnel.pid
+wmi_test.txt
+_launch_tunnel.ps1
