@@ -1,0 +1,13 @@
+name: Keep Render warm
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API
+        run: curl -s -o /dev/null -w "%{http_code}" https://subtrack-api-jszq.onrender.com/api/me
