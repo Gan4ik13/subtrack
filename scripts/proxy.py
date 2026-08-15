@@ -6,6 +6,8 @@
 import http.server
 import mimetypes
 import os
+import threading
+import time
 import urllib.error
 import urllib.request
 
@@ -121,4 +123,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
+    def warmup():
+        time.sleep(3)
+        while True:
+            try:
+                urllib.request.urlopen(UPSTREAM + "/api/me", timeout=60).close()
+            except Exception:
+                pass
+            time.sleep(180)
+
+    threading.Thread(target=warmup, daemon=True).start()
     http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
