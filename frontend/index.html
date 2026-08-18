@@ -838,10 +838,9 @@ class App {
     }
     for (const base of API_BASES) {
       if (this.badBases.has(base)) continue;
-      let timer;
       const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2000);
       try {
-        timer = setTimeout(() => controller.abort(), 5000);
         const r = await fetch(base + '/api/me', { signal: controller.signal });
         clearTimeout(timer);
         if (r.status === 401 || r.ok) {
@@ -868,7 +867,7 @@ class App {
     for (let i = 0; i < attempts; i++) {
       const base = await this.resolveApiBase();
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 30000);
+      const timer = setTimeout(() => controller.abort(), 15000);
       try {
         const resp = await fetch(base + path, { ...options, signal: controller.signal });
         clearTimeout(timer);
@@ -877,7 +876,7 @@ class App {
         clearTimeout(timer);
         lastErr = e;
         this.invalidateBase(base);
-        if (i < attempts - 1) await new Promise(r => setTimeout(r, 1500));
+        if (i < attempts - 1) await new Promise(r => setTimeout(r, 800));
       }
     }
     if (lastErr.name === 'AbortError') throw new Error('Сервер не отвечает. Проверьте интернет и попробуйте ещё раз');
