@@ -607,13 +607,13 @@ const API_BASES = (location.hostname === 'localhost' || location.hostname === '1
   ? ['http://localhost:8000']
   : location.hostname.endsWith('.ts.net')
     ? [location.origin]
-    : ['https://subtrack-api-jszq.onrender.com'];
+    : ['https://vercel-proxy-murex-six.vercel.app', 'https://subtrack-api-jszq.onrender.com'];
 
 async function loadTunnelBase() {
   try {
     const r = await fetch('./tunnel.txt', { cache: 'no-cache' });
     const t = (await r.text()).trim();
-    if (/^https:\/\/[a-z0-9.-]+\.(?:ts\.net|trycloudflare\.com)$/.test(t) && !API_BASES.includes(t)) API_BASES.push(t);
+    if (/^https:\/\/[a-z0-9.-]+\.(?:ts\.net|trycloudflare\.com|vercel\.app)$/.test(t) && !API_BASES.includes(t)) API_BASES.push(t);
   } catch (e) {}
 }
 
