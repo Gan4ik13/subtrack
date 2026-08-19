@@ -23,7 +23,7 @@ OWNER_EMAIL = os.environ.get("OWNER_EMAIL", "").strip().lower()
 
 FRONTEND_ORIGINS = [
     o.strip()
-    for o in os.environ.get("FRONTEND_ORIGIN", "http://localhost:8080,http://localhost:5500,https://gan4ik13.github.io").split(",")
+    for o in os.environ.get("FRONTEND_ORIGIN", "http://localhost:8080,http://localhost:5500,https://gan4ik13.github.io,https://subping.ru").split(",")
     if o.strip()
 ]
 app.add_middleware(

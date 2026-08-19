@@ -37,7 +37,7 @@ def base64_basic(s: str) -> str:
 def _yookassa_create_payment(payment: dict, customer_email: str = "") -> dict:
     """Создаёт платёж в ЮKassa. Возвращает invoice с confirmation_url."""
     url = "https://api.yookassa.ru/v3/payments"
-    return_url = os.environ.get("FRONTEND_ORIGIN", "https://gan4ik13.github.io").split(",")[0].strip()
+    return_url = os.environ.get("FRONTEND_ORIGIN", "https://subping.ru").split(",")[0].strip()
     return_url = return_url.rstrip("/") + "/"
     body = {
         "amount": {"value": f"{payment['amount']:.2f}", "currency": "RUB"},
@@ -110,7 +110,7 @@ def build_payment_form_html(payment) -> str:
     """
     label = payment["comment"][:64]
     amount = f"{payment['amount']:.2f}"
-    success = os.environ.get("FRONTEND_ORIGIN", "https://gan4ik13.github.io").split(",")[0].strip()
+    success = os.environ.get("FRONTEND_ORIGIN", "https://subping.ru").split(",")[0].strip()
     success = success.rstrip("/") + "/"
 
     def esc(s: str) -> str:
@@ -178,7 +178,7 @@ def _cryptopay_create_invoice(payment):
         "fiat": CRYPTOPAY_FIAT,
         "description": payment["comment"],
         "paid_btn_name": "openButton",
-        "paid_btn_url": os.environ.get("FRONTEND_ORIGIN", "https://subtrack.github.io"),
+        "paid_btn_url": os.environ.get("FRONTEND_ORIGIN", "https://subping.ru"),
     }
     resp = requests.post(url, headers=headers, json=payload, timeout=30)
     data = resp.json()
