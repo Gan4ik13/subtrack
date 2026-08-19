@@ -839,7 +839,7 @@ class App {
     for (const base of API_BASES) {
       if (this.badBases.has(base)) continue;
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 2000);
+      const timer = setTimeout(() => controller.abort(), 5000);
       try {
         const r = await fetch(base + '/api/me', { signal: controller.signal });
         clearTimeout(timer);
@@ -867,7 +867,7 @@ class App {
     for (let i = 0; i < attempts; i++) {
       const base = await this.resolveApiBase();
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 15000);
+      const timer = setTimeout(() => controller.abort(), 35000);
       try {
         const resp = await fetch(base + path, { ...options, signal: controller.signal });
         clearTimeout(timer);
