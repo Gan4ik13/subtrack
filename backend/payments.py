@@ -25,7 +25,7 @@ def _yookassa_headers(idempotency_key: str = "") -> dict:
     return {
         "Authorization": "Basic " + base64_basic(YOOKASSA_SHOP_ID + ":" + YOOKASSA_SECRET_KEY),
         "Content-Type": "application/json",
-        "Idempotency-Key": idempotency_key or token,
+        "Idempotence-Key": idempotency_key or token,
     }
 
 
