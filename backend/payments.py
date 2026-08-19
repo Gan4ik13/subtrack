@@ -14,7 +14,7 @@ CRYPTOPAY_ASSET = os.environ.get("CRYPTOPAY_ASSET", "USDT")
 CRYPTOPAY_FIAT = os.environ.get("CRYPTOPAY_FIAT", "RUB")
 YOOKASSA_SHOP_ID = os.environ.get("YOOKASSA_SHOP_ID", "")
 YOOKASSA_SECRET_KEY = os.environ.get("YOOKASSA_SECRET_KEY", "")
-YOOKASSA_VAT_CODE = os.environ.get("YOOKASSA_VAT_CODE", "1")
+YOOKASSA_VAT_CODE = os.environ.get("YOOKASSA_VAT_CODE", "0")
 
 PRICE_RUB = float(os.environ.get("PRICE_RUB", "15"))
 PAYMENT_MODE = os.environ.get("PAYMENT_MODE", "manual")
@@ -50,6 +50,7 @@ def _yookassa_create_payment(payment: dict, customer_email: str = "") -> dict:
         # receipt — основа для автоматического чека ФНС (самозанятый)
         body["receipt"] = {
             "customer": {"email": customer_email},
+            "tax_system": 1,
             "items": [
                 {
                     "description": "SubPing Premium (1 месяц)",
