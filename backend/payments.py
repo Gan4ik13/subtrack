@@ -64,7 +64,7 @@ def _yookassa_create_payment(payment: dict, customer_email: str = "") -> dict:
         raise RuntimeError(f"YooKassa create error {resp.status_code}: {resp.text[:300]}")
     data = resp.json()
     confirmation = data.get("confirmation", {})
-    if data.get("status") in ("succeeded", "waiting_for_capture") and confirmation.get("confirmation_url"):
+    if confirmation.get("confirmation_url"):
         return data
     raise RuntimeError(f"YooKassa: не получен confirmation_url: {data}")
 
