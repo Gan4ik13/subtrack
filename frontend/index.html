@@ -1488,6 +1488,8 @@ class App {
 
     this.el.premiumBadge.classList.toggle('hidden', !user.premium);
 
+    const subs = [...this.state.subs].sort((a, b) => this.daysUntil(a.next_date) - this.daysUntil(b.next_date));
+
     const weekBadge = document.getElementById('week-badge');
     if (weekBadge) {
       const now = new Date();
@@ -1505,8 +1507,6 @@ class App {
         weekBadge.classList.add('hidden');
       }
     }
-
-    const subs = [...this.state.subs].sort((a, b) => this.daysUntil(a.next_date) - this.daysUntil(b.next_date));
     const totals = this.computeTotals(subs);
     this.el.summaryMonthly.textContent = this.formatCurrencyMap(totals.monthly);
     this.el.summaryYearly.textContent = this.formatCurrencyMap(totals.yearly);
