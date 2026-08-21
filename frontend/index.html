@@ -259,6 +259,7 @@
       </form>
     </div>
     <p class="text-center text-[11px] text-[var(--text-muted)] mt-4">Бесплатно — до 3 подписок · Premium — безлимит за 15 ₽/мес</p>
+    <button type="button" id="demo-btn" class="block mx-auto mt-3 text-xs text-accent-400 underline hover:text-accent transition-colors">Попробовать без регистрации</button>
     <p class="text-center text-xs text-[var(--text-muted)] mt-2">Данные в безопасности · Синхронизация между устройствами</p>
 
     <!-- Pricing -->
@@ -805,10 +806,25 @@ class App {
     { name: 'СберПрайм', category: 'Утилиты', amount: 299 },
     { name: 'Тинькофф Про', category: 'Утилиты', amount: 299 },
     { name: 'Сбер', category: 'Утилиты', amount: 99 },
-    { name: 'МТС', category: 'Утилиты', amount: 400 },
     { name: 'Telegram Premium', category: 'Утилиты', amount: 349 },
     { name: 'Яндекс 360', category: 'Работа', amount: 299 },
-    { name: 'ChatGPT Plus', category: 'Работа', amount: 1999 }
+    { name: 'ChatGPT Plus', category: 'Работа', amount: 1999 },
+    { name: 'МТС', category: 'Мобильная связь', amount: 400 },
+    { name: 'Билайн', category: 'Мобильная связь', amount: 350 },
+    { name: 'Мегафон', category: 'Мобильная связь', amount: 400 },
+    { name: 'Теле2', category: 'Мобильная связь', amount: 300 },
+    { name: 'Yota', category: 'Мобильная связь', amount: 300 },
+    { name: 'МТС ТВ', category: 'Развлечения', amount: 249 },
+    { name: 'Ростелеком', category: 'Мобильная связь', amount: 250 },
+    { name: 'ЯндексUSIC', category: 'Развлечения', amount: 199 },
+    { name: 'Spotify', category: 'Развлечения', amount: 299 },
+    { name: 'Netflix', category: 'Развлечения', amount: 599 },
+    { name: 'Apple Music', category: 'Развлечения', amount: 199 },
+    { name: 'Spotify Family', category: 'Развлечения', amount: 549 },
+    { name: 'Яндекс Плюс Family', category: 'Развлечения', amount: 399 },
+    { name: 'Duolingo', category: 'Образование', amount: 399 },
+    { name: 'IVI Premium', category: 'Развлечения', amount: 399 },
+    { name: 'Кинопоиск', category: 'Развлечения', amount: 399 }
   ];
 
   constructor() {
@@ -836,7 +852,9 @@ class App {
     if (this.state.token) {
       this.loadMe()
         .then(() => this.switchView('dashboard'))
-        .catch(() => this.switchView('login'));
+        .catch(() => { this.state.token = null; localStorage.removeItem(App.TOKEN_KEY); this.switchView('login'); });
+    } else if (localStorage.getItem('subping_demo')) {
+      this.startDemo();
     } else {
       this.switchView('login');
     }
@@ -926,6 +944,7 @@ class App {
     this.el = {
       views: document.querySelectorAll('[data-view]'),
       authForm: document.getElementById('auth-form'),
+      demoBtn: document.getElementById('demo-btn'),
       authEmail: document.getElementById('auth-email'),
       authPassword: document.getElementById('auth-password'),
       authError: document.getElementById('auth-error'),
@@ -984,6 +1003,7 @@ class App {
       tab.addEventListener('click', () => this.setAuthMode(tab.dataset.authTab));
     });
     this.el.authForm.addEventListener('submit', e => this.handleAuthSubmit(e));
+    if (this.el.demoBtn) this.el.demoBtn.addEventListener('click', () => this.startDemo());
 
     document.querySelectorAll('[data-nav]').forEach(btn => {
       btn.addEventListener('click', () => this.switchView(btn.dataset.nav));
@@ -1088,7 +1108,37 @@ class App {
     this.state.token = null;
     this.state.user = null;
     this.state.subs = [];
+    this.state.demo = false;
     localStorage.removeItem(App.TOKEN_KEY);
+    localStorage.removeItem('subping_demo');
+    localStorage.removeItem('subping_demo_subs');
+  }
+
+  startDemo() {
+    this.state.demo = true;
+    this.state.token = null;
+    localStorage.setItem('subping_demo', '1');
+    let demoSubs = [];
+    try { demoSubs = JSON.parse(localStorage.getItem('subping_demo_subs') || '[]'); } catch (e) {}
+    if (!demoSubs.length) {
+      const today = new Date();
+      const fmt = d => d.toISOString().slice(0, 10);
+      const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+      demoSubs = [
+        { id: 'demo_1', name: 'Яндекс Плюс', amount: 299, currency: 'RUB', period: 'monthly', category: 'Развлечения', next_date: fmt(addDays(today, 5)), last_notify: '' },
+        { id: 'demo_2', name: 'Иви', amount: 399, currency: 'RUB', period: 'monthly', category: 'Развлечения', next_date: fmt(addDays(today, 12)), last_notify: '' },
+        { id: 'demo_3', name: 'Telegram Premium', amount: 349, currency: 'RUB', period: 'monthly', category: 'Утилиты', next_date: fmt(addDays(today, 20)), last_notify: '' },
+      ];
+      localStorage.setItem('subping_demo_subs', JSON.stringify(demoSubs));
+    }
+    this.state.subs = demoSubs;
+    this.state.user = { email: 'demo@subping.ru', premium: false, premium_until: null, telegram_chat_id: null, reminder_days: 3, subscriptions: demoSubs };
+    this.switchView('dashboard');
+    this.toast('Демо-режим — данные сохраняются на этом устройстве', 'info');
+  }
+
+  demoSaveSubs() {
+    localStorage.setItem('subping_demo_subs', JSON.stringify(this.state.subs));
   }
 
   async logout() {
@@ -1206,16 +1256,37 @@ class App {
     };
     const id = this.el.subId.value;
     try {
-      if (id) {
-        await this.api('/api/subscriptions/' + id, { method: 'PUT', body: JSON.stringify(payload) });
-        this.toast('Подписка обновлена', 'success');
+      if (this.state.demo) {
+        if (id) {
+          const idx = this.state.subs.findIndex(s => s.id === id);
+          if (idx >= 0) Object.assign(this.state.subs[idx], payload);
+          this.toast('Подписка обновлена', 'success');
+        } else {
+          if (!this.state.user.premium && this.state.subs.length >= App.FREE_LIMIT) {
+            this.toast('Бесплатный лимит — 3 подписки. Оформите Premium!', 'warning');
+            return;
+          }
+          payload.id = 'demo_' + Date.now();
+          payload.last_notify = '';
+          this.state.subs.push(payload);
+          this.toast('Подписка добавлена', 'success');
+        }
+        this.demoSaveSubs();
+        this.state.user.subscriptions = this.state.subs;
+        this.closeSubModal();
+        this.renderDashboard();
       } else {
-        await this.api('/api/subscriptions', { method: 'POST', body: JSON.stringify(payload) });
-        this.toast('Подписка добавлена', 'success');
+        if (id) {
+          await this.api('/api/subscriptions/' + id, { method: 'PUT', body: JSON.stringify(payload) });
+          this.toast('Подписка обновлена', 'success');
+        } else {
+          await this.api('/api/subscriptions', { method: 'POST', body: JSON.stringify(payload) });
+          this.toast('Подписка добавлена', 'success');
+        }
+        this.closeSubModal();
+        await this.loadMe();
+        this.renderDashboard();
       }
-      this.closeSubModal();
-      await this.loadMe();
-      this.renderDashboard();
     } catch (err) {
       this.el.subError.textContent = err.message;
       this.el.subError.classList.remove('hidden');
@@ -1226,11 +1297,20 @@ class App {
     if (!id) return;
     if (!confirm('Удалить эту подписку?')) return;
     try {
-      await this.api('/api/subscriptions/' + id, { method: 'DELETE' });
-      this.closeSubModal();
-      await this.loadMe();
-      this.renderDashboard();
-      this.toast('Подписка удалена', 'info');
+      if (this.state.demo) {
+        this.state.subs = this.state.subs.filter(s => s.id !== id);
+        this.demoSaveSubs();
+        this.state.user.subscriptions = this.state.subs;
+        this.closeSubModal();
+        this.renderDashboard();
+        this.toast('Подписка удалена', 'info');
+      } else {
+        await this.api('/api/subscriptions/' + id, { method: 'DELETE' });
+        this.closeSubModal();
+        await this.loadMe();
+        this.renderDashboard();
+        this.toast('Подписка удалена', 'info');
+      }
     } catch (err) {
       this.toast(err.message, 'warning');
     }
@@ -1281,6 +1361,19 @@ class App {
   renderDashboard() {
     const user = this.state.user;
     if (!user) return;
+
+    if (this.state.demo && !document.getElementById('demo-banner')) {
+      const banner = document.createElement('div');
+      banner.id = 'demo-banner';
+      banner.className = 'mx-auto max-w-3xl px-4 sm:px-6 mt-4 bg-accent/10 border border-accent/30 rounded-2xl p-3.5 flex items-center justify-between gap-3';
+      banner.innerHTML = `
+        <p class="text-xs text-accent-400 font-medium">Демо-режим — данные на этом устройстве. <a href="#" class="underline" id="demo-register">Зарегистрируйтесь</a>, чтобы сохранить.</p>
+        <button type="button" id="demo-exit" class="text-[10px] text-[var(--text-muted)] hover:text-accent shrink-0">Выйти</button>`;
+      const dashboard = this.el.subsList?.closest('[data-view]');
+      if (dashboard) dashboard.insertBefore(banner, dashboard.firstChild);
+      banner.querySelector('#demo-register')?.addEventListener('click', e => { e.preventDefault(); this.clearSession(); this.switchView('login'); this.setAuthMode('register'); });
+      banner.querySelector('#demo-exit')?.addEventListener('click', () => { this.clearSession(); this.switchView('login'); });
+    }
 
     this.el.premiumBadge.classList.toggle('hidden', !user.premium);
 
@@ -1532,6 +1625,16 @@ class App {
   }
 
   async startPayment() {
+    if (this.state.demo) {
+      this.el.paymentModalBody.innerHTML = `
+        <div class="text-center py-6">
+          <p class="text-sm font-medium mb-4">В демо-режиме оплата недоступна</p>
+          <p class="text-xs text-[var(--text-secondary)] mb-4">Зарегистрируйтесь, чтобы оформить Premium</p>
+          <button type="button" data-action="close-payment" class="w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5">Зарегистрироваться</button>
+        </div>`;
+      this.el.paymentModalBody.querySelector('[data-action="close-payment"]')?.addEventListener('click', () => { this.closePaymentModal(); this.clearSession(); this.switchView('login'); this.setAuthMode('register'); });
+      return;
+    }
     this.el.paymentModalBody.innerHTML = this.spinnerHTML('Создание платежа…');
     let res;
     try {
