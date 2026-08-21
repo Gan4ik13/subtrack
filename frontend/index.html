@@ -356,6 +356,7 @@
         <span id="premium-badge" class="hidden ml-1 text-[10px] font-bold uppercase tracking-wide bg-accent/15 text-accent px-2 py-0.5 rounded-full">Premium</span>
       </div>
       <div class="flex items-center gap-2">
+        <button type="button" id="header-login-btn" class="hidden text-xs font-semibold bg-accent/15 text-accent hover:bg-accent hover:text-white px-3 py-1.5 rounded-lg transition-colors">Войти</button>
         <button type="button" data-theme-toggle title="Сменить тему" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Сменить тему">
           <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="#9497a8" stroke-width="1.7"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/></svg>
           <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" stroke="#9497a8" stroke-width="1.7" stroke-linejoin="round"/></svg>
@@ -446,7 +447,8 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <span class="font-bold tracking-tight text-[15px]">Настройки</span>
-      <div class="ml-auto">
+      <div class="ml-auto flex items-center gap-2">
+        <button type="button" id="settings-login-btn" class="hidden text-xs font-semibold bg-accent/15 text-accent hover:bg-accent hover:text-white px-3 py-1.5 rounded-lg transition-colors">Войти</button>
         <button type="button" data-theme-toggle title="Сменить тему" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Сменить тему">
           <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="#9497a8" stroke-width="1.7"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/></svg>
           <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" stroke="#9497a8" stroke-width="1.7" stroke-linejoin="round"/></svg>
@@ -852,11 +854,9 @@ class App {
     if (this.state.token) {
       this.loadMe()
         .then(() => this.switchView('dashboard'))
-        .catch(() => { this.state.token = null; localStorage.removeItem(App.TOKEN_KEY); this.switchView('login'); });
-    } else if (localStorage.getItem('subping_demo')) {
-      this.startDemo();
+        .catch(() => { this.state.token = null; localStorage.removeItem(App.TOKEN_KEY); this.startDemo(); });
     } else {
-      this.switchView('login');
+      this.startDemo();
     }
   }
 
@@ -1004,6 +1004,10 @@ class App {
     });
     this.el.authForm.addEventListener('submit', e => this.handleAuthSubmit(e));
     if (this.el.demoBtn) this.el.demoBtn.addEventListener('click', () => this.startDemo());
+    const headerLoginBtn = document.getElementById('header-login-btn');
+    if (headerLoginBtn) headerLoginBtn.addEventListener('click', () => { this.clearSession(); this.switchView('login'); });
+    const settingsLoginBtn = document.getElementById('settings-login-btn');
+    if (settingsLoginBtn) settingsLoginBtn.addEventListener('click', () => { this.clearSession(); this.switchView('login'); });
 
     document.querySelectorAll('[data-nav]').forEach(btn => {
       btn.addEventListener('click', () => this.switchView(btn.dataset.nav));
@@ -1141,6 +1145,30 @@ class App {
     localStorage.setItem('subping_demo_subs', JSON.stringify(this.state.subs));
   }
 
+  showLimitModal() {
+    const modal = document.createElement('div');
+    modal.id = 'limit-modal';
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4';
+    modal.innerHTML = `
+      <div class="bg-surface border border-border rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center relative">
+        <button type="button" class="limit-close absolute top-3 right-3 w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center hover:bg-accent/20 transition-colors" aria-label="Закрыть">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#9497a8" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <div class="w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center mx-auto mb-4">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z" stroke="#818cf8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3 class="text-lg font-bold mb-2">Лимит демо-режима</h3>
+        <p class="text-sm text-[var(--text-secondary)] mb-5">Вы добавили 3 подписки — максимум для пробного периода. Создайте аккаунт, чтобы добавить ещё и сохранить данные.</p>
+        <button type="button" class="limit-register w-full bg-accent hover:bg-accent-hover text-white font-semibold py-2.5 rounded-xl transition-colors mb-2">Создать аккаунт</button>
+        <button type="button" class="limit-close w-full bg-surface-2 hover:bg-surface text-[var(--text-secondary)] text-sm font-medium py-2.5 rounded-xl transition-colors">Потом</button>
+      </div>`;
+    document.body.appendChild(modal);
+    const close = () => modal.remove();
+    modal.querySelector('.limit-close')?.addEventListener('click', close);
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+    modal.querySelector('.limit-register')?.addEventListener('click', () => { close(); this.clearSession(); this.switchView('login'); this.setAuthMode('register'); });
+  }
+
   async logout() {
     try { await this.api('/api/auth/logout', { method: 'POST', body: '{}' }); } catch (e) {}
     this.clearSession();
@@ -1152,8 +1180,12 @@ class App {
   async openSubModal(subId = null) {
     const user = this.state.user;
     if (!subId && !user.premium && user.subscriptions.length >= App.FREE_LIMIT) {
-      this.switchView('settings');
-      this.toast('Достигнут лимит бесплатного тарифа (3 подписки)', 'warning');
+      if (this.state.demo) {
+        this.showLimitModal();
+      } else {
+        this.switchView('settings');
+        this.toast('Достигнут лимит бесплатного тарифа (3 подписки)', 'warning');
+      }
       return;
     }
     this.state.editingSubId = subId;
@@ -1362,17 +1394,30 @@ class App {
     const user = this.state.user;
     if (!user) return;
 
+    const headerLoginBtn = document.getElementById('header-login-btn');
+    if (headerLoginBtn) headerLoginBtn.classList.toggle('hidden', !this.state.demo);
+
+    if (!this.state.demo) {
+      document.getElementById('demo-banner')?.remove();
+    }
+
     if (this.state.demo && !document.getElementById('demo-banner')) {
       const banner = document.createElement('div');
       banner.id = 'demo-banner';
-      banner.className = 'mx-auto max-w-3xl px-4 sm:px-6 mt-4 bg-accent/10 border border-accent/30 rounded-2xl p-3.5 flex items-center justify-between gap-3';
+      banner.className = 'mx-auto max-w-3xl px-4 sm:px-6 mt-4';
       banner.innerHTML = `
-        <p class="text-xs text-accent-400 font-medium">Демо-режим — данные на этом устройстве. <a href="#" class="underline" id="demo-register">Зарегистрируйтесь</a>, чтобы сохранить.</p>
-        <button type="button" id="demo-exit" class="text-[10px] text-[var(--text-muted)] hover:text-accent shrink-0">Выйти</button>`;
+        <div class="bg-gradient-to-r from-accent/10 to-accent/5 border border-accent/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-accent-400 mb-0.5">Это демо-данные</p>
+            <p class="text-xs text-[var(--text-secondary)]">Добавляйте и редактируйте подписки. Чтобы сохранить данные и получить напоминания в Telegram — создайте аккаунт.</p>
+          </div>
+          <div class="flex gap-2 shrink-0">
+            <button type="button" id="demo-register" class="text-xs font-semibold bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-xl transition-colors whitespace-nowrap">Создать аккаунт</button>
+          </div>
+        </div>`;
       const dashboard = this.el.subsList?.closest('[data-view]');
-      if (dashboard) dashboard.insertBefore(banner, dashboard.firstChild);
-      banner.querySelector('#demo-register')?.addEventListener('click', e => { e.preventDefault(); this.clearSession(); this.switchView('login'); this.setAuthMode('register'); });
-      banner.querySelector('#demo-exit')?.addEventListener('click', () => { this.clearSession(); this.switchView('login'); });
+      if (dashboard) dashboard.insertBefore(banner, dashboard.querySelector('.max-w-3xl > div:not(#demo-banner):not(header)'));
+      banner.querySelector('#demo-register')?.addEventListener('click', () => { this.clearSession(); this.switchView('login'); this.setAuthMode('register'); });
     }
 
     this.el.premiumBadge.classList.toggle('hidden', !user.premium);
@@ -1483,7 +1528,9 @@ class App {
   renderSettings() {
     const user = this.state.user;
     if (!user) return;
-    this.el.settingsEmail.textContent = user.email;
+    const settingsLoginBtn = document.getElementById('settings-login-btn');
+    if (settingsLoginBtn) settingsLoginBtn.classList.toggle('hidden', !this.state.demo);
+    this.el.settingsEmail.textContent = this.state.demo ? 'Демо-режим' : user.email;
     this.el.tgInput.value = user.telegram_chat_id || '';
     this.el.tgHint.classList.add('hidden');
 
