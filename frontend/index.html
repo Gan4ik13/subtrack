@@ -1416,7 +1416,11 @@ class App {
           </div>
         </div>`;
       const dashboard = this.el.subsList?.closest('[data-view]');
-      if (dashboard) dashboard.insertBefore(banner, dashboard.querySelector('.max-w-3xl > div:not(#demo-banner):not(header)'));
+      if (dashboard) {
+        const contentWrapper = dashboard.querySelector(':scope > .max-w-3xl');
+        if (contentWrapper) dashboard.insertBefore(banner, contentWrapper);
+        else dashboard.prepend(banner);
+      }
       banner.querySelector('#demo-register')?.addEventListener('click', () => { this.clearSession(); this.switchView('login'); this.setAuthMode('register'); });
     }
 
