@@ -1390,6 +1390,8 @@ class App {
   async deleteSubscription(id) {
     if (!id) return;
     if (!confirm('Удалить эту подписку?')) return;
+    const sub = this.state.subs.find(s => s.id === id);
+    const monthlyEquiv = sub ? (sub.period === 'yearly' ? sub.amount / 12 : sub.period === 'weekly' ? sub.amount * 4.33 : sub.amount) : 0;
     try {
       if (this.state.demo) {
         this.state.subs = this.state.subs.filter(s => s.id !== id);
@@ -1397,12 +1399,16 @@ class App {
         this.state.user.subscriptions = this.state.subs;
         this.closeSubModal();
         this.renderDashboard();
-        this.toast('Подписка удалена', 'info');
       } else {
         await this.api('/api/subscriptions/' + id, { method: 'DELETE' });
         this.closeSubModal();
         await this.loadMe();
         this.renderDashboard();
+      }
+      if (sub && monthlyEquiv > 0) {
+        this._addSavingsEntry(monthlyEquiv, 'Удалена «' + sub.name + '»');
+        this.toast('Удалено · +' + this.formatNumber(monthlyEquiv) + ' ₽/мес в накоплениях', 'success');
+      } else {
         this.toast('Подписка удалена', 'info');
       }
     } catch (err) {
@@ -1599,14 +1605,19 @@ class App {
 
   async quickDelete(id) {
     if (!confirm('Удалить подписку?')) return;
+    const sub = this.state.subs.find(s => s.id === id);
+    const monthlyEquiv = sub ? (sub.period === 'yearly' ? sub.amount / 12 : sub.period === 'weekly' ? sub.amount * 4.33 : sub.amount) : 0;
     if (this.state.demo) {
       this.state.subs = this.state.subs.filter(s => s.id !== id);
       this.demoSaveSubs();
       this.state.user.subscriptions = this.state.subs;
       this.renderDashboard();
-      this.toast('Удалено', 'info');
     } else {
       await this.deleteSubscription(id);
+    }
+    if (sub && monthlyEquiv > 0) {
+      this._addSavingsEntry(monthlyEquiv, 'Удалена «' + sub.name + '»');
+      this.toast('Удалено · + ' + this.formatNumber(monthlyEquiv) + ' ₽/мес в накоплениях', 'success');
     }
   }
 
@@ -1698,17 +1709,21 @@ class App {
     const gap = 6;
     const svgW = monthly.length * (barW + gap);
     const monthNames = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+    const nonZero = monthly.filter(m => m.total > 0).map(m => m.total).sort((a, b) => a - b);
+    const baseline = nonZero.length ? nonZero[Math.floor(nonZero.length / 2)] : 0;
 
-    const barSvg = `<svg viewBox="0 0 ${svgW + 10} ${barH + 24}" class="w-full" style="max-height:160px">
+    const barSvg = `<svg viewBox="0 0 ${svgW + 10} ${barH + 28}" class="w-full" style="max-height:170px">
       ${monthly.map((m, i) => {
         const h = maxVal > 0 ? (m.total / maxVal) * barH : 0;
         const x = i * (barW + gap) + 5;
         const y = barH - h + 4;
-        const color = m.past ? 'var(--accent)' : 'var(--accent-hover)';
-        const op = m.past ? '1' : '0.5';
+        const isSpike = baseline > 0 && m.total > baseline * 1.4 && !m.past;
+        const color = m.past ? 'var(--accent)' : isSpike ? 'var(--warning)' : 'var(--accent-hover)';
+        const op = m.past ? '1' : isSpike ? '0.85' : '0.5';
         return `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(h, 2)}" rx="4" fill="${color}" opacity="${op}"/>
           <text x="${x + barW/2}" y="${barH + 18}" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-family="system-ui">${monthNames[m.month]}</text>
-          ${h > 14 ? `<text x="${x + barW/2}" y="${y + 12}" text-anchor="middle" fill="white" font-size="8" font-weight="600" font-family="system-ui">${this.formatNumber(m.total)}</text>` : ''}`;
+          ${h > 14 ? `<text x="${x + barW/2}" y="${y + 12}" text-anchor="middle" fill="white" font-size="8" font-weight="600" font-family="system-ui">${this.formatNumber(m.total)}</text>` : ''}
+          ${isSpike ? `<text x="${x + barW/2}" y="${barH + 26}" text-anchor="middle" fill="var(--warning)" font-size="7" font-family="system-ui">⬆</text>` : ''}`;
       }).join('')}
     </svg>`;
 
@@ -1734,11 +1749,13 @@ class App {
     const forecastMonths = this._projectMonths(subs, 12);
     const yearProjection = forecastMonths.reduce((s, m) => s + m.total, 0);
 
+    const hasSpikes = monthly.some(m => baseline > 0 && m.total > baseline * 1.4 && !m.past);
     this.el.dashTabAnalytics.innerHTML = `
       <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
         <p class="text-xs font-semibold text-[var(--text-secondary)] mb-3">Прогноз трат (12 мес)</p>
         ${barSvg}
-        <div class="flex items-center justify-between mt-3 pt-3 border-t border-border">
+        ${hasSpikes ? '<p class="text-[10px] text-[var(--text-muted)] mt-1">🟧 Помесячные · 🟧⬆ Годовые списания</p>' : ''}
+        <div class="flex items-center justify-between mt-2 pt-3 border-t border-border">
           <span class="text-[11px] text-[var(--text-muted)]">Итого за год</span>
           <span class="text-sm font-bold">${this.formatNumber(yearProjection)} ₽</span>
         </div>
@@ -1766,15 +1783,34 @@ class App {
     const now = new Date();
     const result = [];
     for (let i = 0; i < count; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-      const month = d.getMonth();
+      const mDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const monthDays = new Date(mDate.getFullYear(), mDate.getMonth() + 1, 0).getDate();
       let total = 0;
       subs.forEach(s => {
-        if (s.period === 'monthly') total += s.amount;
-        else if (s.period === 'yearly') total += s.amount / 12;
-        else if (s.period === 'weekly') total += s.amount * 4.33;
+        const nd = new Date(s.next_date + 'T00:00:00');
+        if (s.period === 'monthly') {
+          const monthsSince = (mDate.getFullYear() - nd.getFullYear()) * 12 + (mDate.getMonth() - nd.getMonth());
+          if (monthsSince >= 0 && nd.getDate() <= monthDays) total += s.amount;
+        } else if (s.period === 'yearly') {
+          const yearsSince = mDate.getFullYear() - nd.getFullYear();
+          if (yearsSince >= 0 && mDate.getMonth() === nd.getMonth() && nd.getDate() <= monthDays) {
+            total += s.amount;
+          }
+        } else if (s.period === 'weekly') {
+          const mStart = new Date(mDate.getFullYear(), mDate.getMonth(), 1);
+          const mEnd = new Date(mDate.getFullYear(), mDate.getMonth() + 1, 0, 23, 59, 59);
+          if (mEnd >= nd) {
+            const firstInMonth = new Date(Math.max(mStart.getTime(), nd.getTime()));
+            const daysSinceAnchor = (firstInMonth - nd) / 86400000;
+            const firstWeekOffset = Math.ceil(daysSinceAnchor / 7) * 7;
+            const firstCharge = new Date(nd.getTime() + firstWeekOffset * 86400000);
+            let cnt = 0;
+            for (let t = new Date(firstCharge); t <= mEnd; t.setDate(t.getDate() + 7)) cnt++;
+            total += s.amount * cnt;
+          }
+        }
       });
-      result.push({ year: d.getFullYear(), month, total, past: i === 0 });
+      result.push({ year: mDate.getFullYear(), month: mDate.getMonth(), total, past: i === 0 });
     }
     return result;
   }
@@ -1919,16 +1955,6 @@ class App {
       'ozon premium': { alt: 'Яндекс Плюс', price: 299, save: 0 },
       'telegram premium': { alt: 'Telegram (бесплатный)', price: 0, save: 349 },
     };
-    subs.forEach(s => {
-      const key = s.name.toLowerCase();
-      const match = Object.keys(ALTS).find(k => key.includes(k));
-      if (match && ALTS[match].save > 0 && s.amount > ALTS[match].price) {
-        const a = ALTS[match];
-        if (!insights.find(i => i.type === 'alt' && i.title.includes(s.name))) {
-          insights.push({ type: 'alt', icon: '🔄', title: 'Альтернатива: ' + s.name, desc: 'Попробуйте «' + a.alt + '» — от ' + a.price + ' ₽/мес вместо ' + this.formatNumber(s.amount) + ' ₽.', saving: a.save });
-        }
-      }
-    });
 
     const savings = insights.reduce((s, i) => s + (i.saving || 0), 0);
 
@@ -1952,52 +1978,104 @@ class App {
             </div>
           </div>
         </div>`).join('')}
-      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
-        <p class="text-xs font-semibold text-[var(--text-secondary)] mb-2">Сравнение тарифов</p>
-        ${subs.filter(s => s.period === 'monthly' && s.amount > 100).map(s => {
-          const save = s.amount * 2;
-          return `<div class="flex items-center justify-between py-2 border-b border-border last:border-0">
-            <span class="text-xs">${this.escapeHtml(s.name)}</span>
-            <span class="text-xs font-semibold text-accent">-${this.formatNumber(save)} ₽/год</span>
-          </div>`;
-        }).join('') || '<p class="text-xs text-[var(--text-muted)]">Все подписки уже годовые</p>'}
-      </div>`;
+      ${(() => {
+        const altSuggestions = [];
+        subs.forEach(s => {
+          const key = s.name.toLowerCase();
+          const match = Object.keys(ALTS).find(k => key.includes(k));
+          if (match && ALTS[match].save > 0 && s.amount > ALTS[match].price) {
+            const a = ALTS[match];
+            const monthlyDiff = s.amount - a.price;
+            altSuggestions.push({ name: s.name, alt: a.alt, price: a.price, diff: monthlyDiff, annual: monthlyDiff * 12 });
+          }
+        });
+        if (!altSuggestions.length) return '';
+        const totalAnnual = altSuggestions.reduce((s, a) => s + a.annual, 0);
+        return `<div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-semibold text-[var(--text-secondary)]">Экономия на альтернативах</p>
+            <span class="text-xs font-bold text-success">−${this.formatNumber(totalAnnual)} ₽/год</span>
+          </div>
+          ${altSuggestions.map(a => `<div class="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+            <div class="min-w-0 flex-1">
+              <span class="text-xs">${this.escapeHtml(a.name)}</span>
+              <span class="text-[10px] text-[var(--text-muted)]"> → ${this.escapeHtml(a.alt)}</span>
+            </div>
+            <span class="text-xs font-semibold text-accent shrink-0">−${this.formatNumber(a.annual)} ₽/год</span>
+          </div>`).join('')}
+        </div>`;
+      })()}`;
   }
 
   /* -------------------- Goals Tab -------------------- */
+  _getSavingsLog() {
+    try { return JSON.parse(localStorage.getItem('subping_savings_log') || '[]'); } catch (e) { return []; }
+  }
+  _addSavingsEntry(amount, reason) {
+    const log = this._getSavingsLog();
+    log.push({ date: new Date().toISOString().slice(0, 10), amount, reason });
+    localStorage.setItem('subping_savings_log', JSON.stringify(log));
+  }
   renderGoalsTab(subs) {
     const totalMonthly = Object.values(this.computeTotals(subs).monthly).reduce((a, b) => a + b, 0);
-    const goalTarget = Math.ceil(totalMonthly / 100) * 100;
-    const saved = parseFloat(localStorage.getItem('subping_saved') || '0');
+    let goalTarget = parseFloat(localStorage.getItem('subping_goal_target') || '0');
+    if (!goalTarget || goalTarget <= 0) {
+      goalTarget = Math.max(Math.ceil(totalMonthly / 100) * 100, 500);
+      localStorage.setItem('subping_goal_target', String(goalTarget));
+    }
+    const log = this._getSavingsLog();
+    const saved = log.reduce((s, e) => s + e.amount, 0);
     const pct = goalTarget > 0 ? Math.min((saved / goalTarget) * 100, 100) : 0;
-    const streak = parseInt(localStorage.getItem('subping_streak') || '0');
+
+    const monthSet = new Set(log.map(e => e.date.slice(0, 7)));
+    let streak = 0;
+    const d = new Date();
+    for (let i = 0; i < 24; i++) {
+      const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      if (monthSet.has(key)) streak++; else break;
+      d.setMonth(d.getMonth() - 1);
+    }
+
     const badges = [];
     if (subs.length >= 3) badges.push({ icon: '🎯', name: 'Трекер', desc: '3+ подписок под контролем' });
-    if (saved >= 500) badges.push({ icon: '💰', name: 'Копилка', desc: 'Сэкономили 500+ ₽' });
+    if (saved >= 1000) badges.push({ icon: '💰', name: 'Копилка', desc: 'Сэкономили ' + this.formatNumber(saved) + ' ₽' });
     if (streak >= 2) badges.push({ icon: '🔥', name: 'Стикер', desc: streak + ' мес. подряд' });
     if (subs.length <= 5) badges.push({ icon: '✨', name: 'Минималист', desc: '5 или менее подписок' });
+    if (saved >= goalTarget) badges.push({ icon: '🏆', name: 'Чемпион', desc: 'Цель достигнута!' });
+
+    const recentEntries = log.slice(-5).reverse();
 
     this.el.dashTabGoals.innerHTML = `
       <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
         <div class="flex items-center justify-between mb-2">
-          <p class="text-xs font-semibold text-[var(--text-secondary)]">Цель: сократить расходы</p>
-          <span class="text-xs font-bold text-accent">${this.formatNumber(saved)} / ${this.formatNumber(goalTarget)} ₽</span>
+          <p class="text-xs font-semibold text-[var(--text-secondary)]">Цель: сэкономить</p>
+          <button type="button" id="goal-edit-target" class="text-[10px] font-medium text-[var(--text-muted)] hover:text-accent bg-surface-2 hover:bg-accent/10 px-2 py-1 rounded-lg transition-colors">Цель: ${this.formatNumber(goalTarget)} ₽</button>
         </div>
         <div class="w-full h-3 bg-surface-2 rounded-full overflow-hidden mb-2">
           <div class="h-full bg-gradient-to-r from-accent to-accent-hover rounded-full transition-all" style="width:${pct}%"></div>
         </div>
-        <p class="text-[11px] text-[var(--text-muted)]">${pct >= 100 ? 'Цель достигнута!' : 'Осталось ' + this.formatNumber(goalTarget - saved) + ' ₽'}</p>
+        <p class="text-[11px] text-[var(--text-muted)]">${pct >= 100 ? '🎉 Цель достигнута!' : 'Накоплено ' + this.formatNumber(saved) + ' из ' + this.formatNumber(goalTarget) + ' ₽'}</p>
       </div>
       <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
         <div class="flex items-center gap-3">
           <div class="w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center text-xl">🔥</div>
           <div>
             <p class="text-sm font-bold">${streak} ${streak === 1 ? 'месяц' : streak < 5 ? 'месяца' : 'месяцев'}</p>
-            <p class="text-[11px] text-[var(--text-muted)]">Бюджет под контролем</p>
+            <p class="text-[11px] text-[var(--text-muted)]">Подряд с накоплениями</p>
           </div>
-          <button type="button" id="streak-btn" class="ml-auto text-[10px] font-semibold bg-accent/15 text-accent px-3 py-1.5 rounded-lg">+1</button>
         </div>
       </div>
+      ${recentEntries.length ? `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+        <p class="text-xs font-semibold text-[var(--text-secondary)] mb-2">Последние накопления</p>
+        ${recentEntries.map(e => `<div class="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+          <div class="min-w-0 flex-1">
+            <span class="text-xs text-[var(--text-secondary)]">${this.escapeHtml(e.reason)}</span>
+            <span class="text-[10px] text-[var(--text-muted)] ml-2">${e.date}</span>
+          </div>
+          <span class="text-xs font-semibold text-success shrink-0">+${this.formatNumber(e.amount)} ₽</span>
+        </div>`).join('')}
+      </div>` : ''}
       ${badges.length > 0 ? `
       <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
         <p class="text-xs font-semibold text-[var(--text-secondary)] mb-3">Бейджи</p>
@@ -2006,11 +2084,13 @@ class App {
         </div>
       </div>` : ''}`;
 
-    this.el.dashTabGoals.querySelector('#streak-btn')?.addEventListener('click', () => {
-      const v = parseInt(localStorage.getItem('subping_streak') || '0') + 1;
-      localStorage.setItem('subping_streak', String(v));
-      this.renderGoalsTab(subs);
-      this.toast('Стрик обновлён!', 'success');
+    this.el.dashTabGoals.querySelector('#goal-edit-target')?.addEventListener('click', () => {
+      const val = prompt('Введите цель накопления (₽):', goalTarget);
+      if (val !== null && !isNaN(parseFloat(val)) && parseFloat(val) > 0) {
+        localStorage.setItem('subping_goal_target', val);
+        this.renderGoalsTab(subs);
+        this.toast('Цель обновлена', 'success');
+      }
     });
   }
 
