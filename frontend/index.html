@@ -384,8 +384,22 @@
       </div>
     </div>
 
-    <!-- Analytics (premium) -->
-    <div id="analytics-section" class="hidden mb-6"></div>
+    <!-- Digest -->
+    <div id="digest-section" class="hidden mb-6"></div>
+
+    <!-- Dashboard tabs -->
+    <div id="dash-tabs" class="hidden mb-6">
+      <div class="flex bg-surface-2 rounded-xl p-1 mb-4 text-xs font-medium">
+        <button type="button" data-dash-tab="analytics" class="dash-tab flex-1 py-2 rounded-lg transition-colors">Аналитика</button>
+        <button type="button" data-dash-tab="calendar" class="dash-tab flex-1 py-2 rounded-lg transition-colors">Календарь</button>
+        <button type="button" data-dash-tab="insights" class="dash-tab flex-1 py-2 rounded-lg transition-colors">Инсайты</button>
+        <button type="button" data-dash-tab="goals" class="dash-tab flex-1 py-2 rounded-lg transition-colors">Цели</button>
+      </div>
+      <div id="dash-tab-analytics" class="hidden"></div>
+      <div id="dash-tab-calendar" class="hidden"></div>
+      <div id="dash-tab-insights" class="hidden"></div>
+      <div id="dash-tab-goals" class="hidden"></div>
+    </div>
 
     <div class="flex items-center justify-between mb-3">
       <h1 class="text-sm font-semibold text-[var(--text-secondary)]">Подписки <span id="sub-count" class="text-[var(--text-muted)]"></span></h1>
@@ -839,7 +853,10 @@ class App {
       paymentId: null,
       paymentManual: false,
       subs: [],
-      payTimer: null
+      payTimer: null,
+      dashTab: 'analytics',
+      calMonth: new Date().getMonth(),
+      calYear: new Date().getFullYear()
     };
     this.apiBase = null;
     this.badBases = new Set();
@@ -960,7 +977,12 @@ class App {
       subsList: document.getElementById('subscriptions-list'),
       emptyState: document.getElementById('empty-state'),
       limitBanner: document.getElementById('limit-banner'),
-      analyticsSection: document.getElementById('analytics-section'),
+      digestSection: document.getElementById('digest-section'),
+      dashTabs: document.getElementById('dash-tabs'),
+      dashTabAnalytics: document.getElementById('dash-tab-analytics'),
+      dashTabCalendar: document.getElementById('dash-tab-calendar'),
+      dashTabInsights: document.getElementById('dash-tab-insights'),
+      dashTabGoals: document.getElementById('dash-tab-goals'),
 
       settingsEmail: document.getElementById('settings-email'),
       premiumCard: document.getElementById('premium-card'),
@@ -1008,6 +1030,10 @@ class App {
     if (headerLoginBtn) headerLoginBtn.addEventListener('click', () => { this.clearSession(); this.switchView('login'); });
     const settingsLoginBtn = document.getElementById('settings-login-btn');
     if (settingsLoginBtn) settingsLoginBtn.addEventListener('click', () => { this.clearSession(); this.switchView('login'); });
+
+    document.querySelectorAll('[data-dash-tab]').forEach(btn => {
+      btn.addEventListener('click', () => this.switchDashTab(btn.dataset.dashTab));
+    });
 
     document.querySelectorAll('[data-nav]').forEach(btn => {
       btn.addEventListener('click', () => this.switchView(btn.dataset.nav));
@@ -1436,9 +1462,14 @@ class App {
     this.el.emptyState.classList.toggle('flex', subs.length === 0);
     this.el.limitBanner.classList.toggle('hidden', user.premium || subs.length < App.FREE_LIMIT);
 
-    this.el.analyticsSection.classList.toggle('hidden', !user.premium || !subs.length);
-    if (user.premium && subs.length) {
-      this.el.analyticsSection.innerHTML = this.analyticsHTML(subs);
+    if (subs.length >= 2) {
+      this.el.dashTabs.classList.remove('hidden');
+      this.el.digestSection.classList.remove('hidden');
+      this.renderDigest(subs);
+      this.switchDashTab(this.state.dashTab);
+    } else {
+      this.el.dashTabs.classList.add('hidden');
+      this.el.digestSection.classList.add('hidden');
     }
 
     this.el.subsList.innerHTML = subs.map(s => this.subscriptionCardHTML(s)).join('');
@@ -1447,7 +1478,379 @@ class App {
     });
   }
 
-  subscriptionCardHTML(s) {
+
+  /* -------------------- Tab switching -------------------- */
+  switchDashTab(name) {
+    this.state.dashTab = name;
+    document.querySelectorAll('.dash-tab').forEach(t => t.classList.toggle('bg-accent', t.dataset.dashTab === name));
+    document.querySelectorAll('.dash-tab').forEach(t => t.classList.toggle('text-white', t.dataset.dashTab === name));
+    document.querySelectorAll('.dash-tab').forEach(t => t.classList.toggle('text-[var(--text-secondary)]', t.dataset.dashTab !== name));
+    this.el.dashTabAnalytics.classList.toggle('hidden', name !== 'analytics');
+    this.el.dashTabCalendar.classList.toggle('hidden', name !== 'calendar');
+    this.el.dashTabInsights.classList.toggle('hidden', name !== 'insights');
+    this.el.dashTabGoals.classList.toggle('hidden', name !== 'goals');
+    const subs = [...this.state.subs].sort((a, b) => this.daysUntil(a.next_date) - this.daysUntil(b.next_date));
+    if (name === 'analytics') this.renderAnalyticsTab(subs);
+    if (name === 'calendar') this.renderCalendarTab(subs);
+    if (name === 'insights') this.renderInsightsTab(subs);
+    if (name === 'goals') this.renderGoalsTab(subs);
+  }
+
+  /* -------------------- Digest -------------------- */
+  renderDigest(subs) {
+    const totals = this.computeTotals(subs);
+    const monthly = Object.values(totals.monthly).reduce((a, b) => a + b, 0);
+    const top3 = [...subs].sort((a, b) => b.amount - a.amount).slice(0, 3);
+    const next = subs[0];
+    const nextDays = this.daysUntil(next.next_date);
+    const nextUrg = this.urgencyClasses(nextDays);
+    this.el.digestSection.innerHTML = `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-xs font-semibold text-[var(--text-secondary)]">Ваш дайджест</p>
+          <span class="text-[10px] text-[var(--text-muted)]">${new Date().toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <div class="bg-surface-2 rounded-xl p-2.5 text-center">
+            <p class="text-[10px] text-[var(--text-muted)] mb-0.5">Траты/мес</p>
+            <p class="text-sm font-bold">${this.formatNumber(monthly)} ₽</p>
+          </div>
+          <div class="bg-surface-2 rounded-xl p-2.5 text-center">
+            <p class="text-[10px] text-[var(--text-muted)] mb-0.5">Подписок</p>
+            <p class="text-sm font-bold">${subs.length}</p>
+          </div>
+          <div class="bg-surface-2 rounded-xl p-2.5 text-center">
+            <p class="text-[10px] text-[var(--text-muted)] mb-0.5">След. списание</p>
+            <p class="text-sm font-bold ${nextUrg.text}">${nextDays <= 0 ? 'Сегодня' : nextDays === 1 ? 'Завтра' : nextDays + ' дн'}</p>
+          </div>
+        </div>
+        <div class="border-t border-border pt-3">
+          <p class="text-[10px] text-[var(--text-muted)] mb-2">Топ-3 самых дорогих</p>
+          ${top3.map(s => {
+            const pct = monthly > 0 ? (s.amount / monthly * 100).toFixed(0) : 0;
+            return `<div class="flex items-center gap-2 mb-1.5">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between mb-0.5">
+                  <span class="text-xs font-medium truncate">${this.escapeHtml(s.name)}</span>
+                  <span class="text-xs font-bold shrink-0">${this.formatNumber(s.amount)} ₽</span>
+                </div>
+                <div class="w-full h-1.5 bg-surface-2 rounded-full overflow-hidden">
+                  <div class="h-full bg-accent rounded-full" style="width:${pct}%"></div>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
+
+  /* -------------------- Analytics Tab -------------------- */
+  renderAnalyticsTab(subs) {
+    const monthly = this._projectMonths(subs, 12);
+    const catMap = {};
+    subs.forEach(s => { catMap[s.category] = (catMap[s.category] || 0) + s.amount; });
+    const maxVal = Math.max(...monthly.map(m => m.total), 1);
+    const barH = 100;
+    const barW = 24;
+    const gap = 6;
+    const svgW = monthly.length * (barW + gap);
+    const monthNames = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+
+    const barSvg = `<svg viewBox="0 0 ${svgW + 10} ${barH + 24}" class="w-full" style="max-height:160px">
+      ${monthly.map((m, i) => {
+        const h = maxVal > 0 ? (m.total / maxVal) * barH : 0;
+        const x = i * (barW + gap) + 5;
+        const y = barH - h + 4;
+        const color = m.past ? 'var(--accent)' : 'var(--accent-hover)';
+        const op = m.past ? '1' : '0.5';
+        return `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(h, 2)}" rx="4" fill="${color}" opacity="${op}"/>
+          <text x="${x + barW/2}" y="${barH + 18}" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-family="system-ui">${monthNames[m.month]}</text>
+          ${h > 14 ? `<text x="${x + barW/2}" y="${y + 12}" text-anchor="middle" fill="white" font-size="8" font-weight="600" font-family="system-ui">${this.formatNumber(m.total)}</text>` : ''}`;
+      }).join('')}
+    </svg>`;
+
+    const catColors = ['#6366f1','#818cf8','#a78bfa','#c084fc','#e879f9','#f472b6','#fb7185','#f87171'];
+    const catEntries = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+    const catTotal = catEntries.reduce((s, [, v]) => s + v, 0) || 1;
+    let pieSvg = '';
+    if (catEntries.length > 0) {
+      const r = 36, cx = 44, cy = 44, circ = 2 * Math.PI * r;
+      let off = 0;
+      const slices = catEntries.map(([cat, val], i) => {
+        const pct = val / catTotal;
+        const dash = pct * circ;
+        const g = circ - dash;
+        const color = catColors[i % catColors.length];
+        const s = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="16" stroke-dasharray="${dash} ${g}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cy})"/>`;
+        off += dash;
+        return s;
+      });
+      pieSvg = `<svg viewBox="0 0 88 88" style="width:88px;height:88px">${slices.join('')}</svg>`;
+    }
+
+    const forecastMonths = this._projectMonths(subs, 12);
+    const yearProjection = forecastMonths.reduce((s, m) => s + m.total, 0);
+
+    this.el.dashTabAnalytics.innerHTML = `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+        <p class="text-xs font-semibold text-[var(--text-secondary)] mb-3">Прогноз трат (12 мес)</p>
+        ${barSvg}
+        <div class="flex items-center justify-between mt-3 pt-3 border-t border-border">
+          <span class="text-[11px] text-[var(--text-muted)]">Итого за год</span>
+          <span class="text-sm font-bold">${this.formatNumber(yearProjection)} ₽</span>
+        </div>
+      </div>
+      ${catEntries.length > 0 ? `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+        <p class="text-xs font-semibold text-[var(--text-secondary)] mb-3">По категориям</p>
+        <div class="flex items-start gap-4">
+          ${pieSvg}
+          <div class="flex-1 flex flex-col gap-1.5">
+            ${catEntries.map(([cat, val], i) => {
+              const pct = (val / catTotal * 100).toFixed(0);
+              return `<div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background:${catColors[i % catColors.length]}"></span>
+                <span class="text-xs flex-1 truncate">${this.escapeHtml(cat)}</span>
+                <span class="text-xs font-medium">${pct}%</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>` : ''}`;
+  }
+
+  _projectMonths(subs, count) {
+    const now = new Date();
+    const result = [];
+    for (let i = 0; i < count; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const month = d.getMonth();
+      let total = 0;
+      subs.forEach(s => {
+        if (s.period === 'monthly') total += s.amount;
+        else if (s.period === 'yearly') total += s.amount / 12;
+        else if (s.period === 'weekly') total += s.amount * 4.33;
+      });
+      result.push({ year: d.getFullYear(), month, total, past: i === 0 });
+    }
+    return result;
+  }
+
+  /* -------------------- Calendar Tab -------------------- */
+  renderCalendarTab(subs) {
+    const { calMonth, calYear } = this.state;
+    const firstDay = new Date(calYear, calMonth, 1);
+    const lastDay = new Date(calYear, calMonth + 1, 0);
+    const startDow = (firstDay.getDay() + 6) % 7;
+    const daysInMonth = lastDay.getDate();
+    const monthLabel = firstDay.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const chargeDays = {};
+    subs.forEach(s => {
+      try {
+        const d = new Date(s.next_date + 'T00:00:00');
+        const key = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+        if (!chargeDays[key]) chargeDays[key] = [];
+        chargeDays[key].push(s);
+      } catch (e) {}
+    });
+
+    const heavyWeeks = new Set();
+    const weekCharges = {};
+    for (let day = 1; day <= daysInMonth; day++) {
+      const weekNum = Math.floor((day - 1 + startDow) / 7);
+      const key = calYear + '-' + calMonth + '-' + day;
+      if (chargeDays[key]) {
+        if (!weekCharges[weekNum]) weekCharges[weekNum] = 0;
+        weekCharges[weekNum] += chargeDays[key].length;
+      }
+    }
+    Object.entries(weekCharges).forEach(([w, c]) => { if (c >= 2) heavyWeeks.add(parseInt(w)); });
+
+    let cells = '';
+    const dowNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    dowNames.forEach(d => { cells += `<div class="text-center text-[10px] font-medium text-[var(--text-muted)] py-1">${d}</div>`; });
+    for (let i = 0; i < startDow; i++) cells += '<div></div>';
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(calYear, calMonth, day);
+      const key = calYear + '-' + calMonth + '-' + day;
+      const isToday = d.getTime() === today.getTime();
+      const hasCharge = !!chargeDays[key];
+      const weekNum = Math.floor((day - 1 + startDow) / 7);
+      const isHeavy = heavyWeeks.has(weekNum);
+      let cls = 'relative rounded-lg p-1.5 text-center text-xs cursor-default transition-colors min-h-[36px]';
+      if (isToday) cls += ' bg-accent text-white font-bold ring-2 ring-accent/40';
+      else if (hasCharge) cls += ' bg-accent/10 text-accent font-medium cursor-pointer hover:bg-accent/20';
+      else if (isHeavy) cls += ' bg-warning/10';
+      else cls += ' text-[var(--text-secondary)] hover:bg-surface-2';
+      const subData = hasCharge ? chargeDays[key].map(s => s.name + ' ' + s.amount + ' ' + (App.CURRENCY_SYMBOL[s.currency] || 'RUB')).join(' | ') : '';
+      cells += `<div class="${cls}" data-cal-day="${day}" ${hasCharge ? 'data-cal-subs="' + subData.replace(/"/g, '&quot;') + '"' : ''}>
+        ${day}
+        ${hasCharge ? '<span class="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent"></span>' : ''}
+      </div>`;
+    }
+
+    this.el.dashTabCalendar.innerHTML = `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+        <div class="flex items-center justify-between mb-4">
+          <button type="button" class="cal-prev w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center hover:bg-accent/20 transition-colors" aria-label="Назад">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <p class="text-sm font-semibold capitalize">${monthLabel}</p>
+          <button type="button" class="cal-next w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center hover:bg-accent/20 transition-colors" aria-label="Вперёд">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="grid grid-cols-7 gap-1">${cells}</div>
+        <div id="cal-day-detail" class="mt-3 pt-3 border-t border-border hidden"></div>
+      </div>`;
+
+    this.el.dashTabCalendar.querySelector('.cal-prev')?.addEventListener('click', () => {
+      if (this.state.calMonth === 0) { this.state.calMonth = 11; this.state.calYear--; }
+      else this.state.calMonth--;
+      this.renderCalendarTab(subs);
+    });
+    this.el.dashTabCalendar.querySelector('.cal-next')?.addEventListener('click', () => {
+      if (this.state.calMonth === 11) { this.state.calMonth = 0; this.state.calYear++; }
+      else this.state.calMonth++;
+      this.renderCalendarTab(subs);
+    });
+    this.el.dashTabCalendar.querySelectorAll('[data-cal-subs]').forEach(cell => {
+      cell.addEventListener('click', () => {
+        const detail = this.el.dashTabCalendar.querySelector('#cal-day-detail');
+        const raw = cell.dataset.calSuns || cell.getAttribute('data-cal-subs') || '';
+        const items = raw ? raw.split(' | ') : [];
+        const dayNum = cell.dataset.calDay;
+        detail.innerHTML = `<p class="text-xs font-semibold mb-2">${dayNum} ${firstDay.toLocaleDateString('ru-RU', { month: 'long' })}</p>
+          ${items.map(name => '<p class="text-xs text-[var(--text-secondary)] flex items-center gap-1.5 mb-1"><span class="w-1.5 h-1.5 rounded-full bg-accent shrink-0"></span>' + this.escapeHtml(name) + '</p>').join('')}`;
+        detail.classList.remove('hidden');
+      });
+    });
+  }
+
+  /* -------------------- Insights Tab -------------------- */
+  renderInsightsTab(subs) {
+    const insights = [];
+
+    const nameNorm = s => s.name.toLowerCase().replace(/[^a-zа-яё0-9]/g, '');
+    const seen = {};
+    subs.forEach(s => {
+      const n = nameNorm(s);
+      Object.keys(seen).forEach(k => {
+        if ((n.includes(k) || k.includes(n)) && n !== k) {
+          if (!insights.find(i => i.type === 'dup')) {
+            insights.push({ type: 'dup', icon: '🔍', title: 'Возможный дубль', desc: '«' + s.name + '» и «' + seen[k].name + '» — похожие сервисы. Возможно, хватит одного?', saving: Math.min(s.amount, seen[k].amount) });
+          }
+        }
+      });
+      seen[n] = s;
+    });
+
+    const catMap = {};
+    subs.forEach(s => { catMap[s.category] = (catMap[s.category] || 0) + s.amount; });
+    Object.entries(catMap).forEach(([cat, total]) => {
+      const catSubs = subs.filter(s => s.category === cat);
+      if (catSubs.length >= 2) {
+        const maxSub = catSubs.reduce((a, b) => a.amount > b.amount ? a : b);
+        insights.push({ type: 'cat', icon: '📊', title: cat + ': ' + catSubs.length + ' подписки', desc: 'Суммарно ' + this.formatNumber(total) + ' ₽/мес. Самая дорогая — «' + maxSub.name + '» (' + this.formatNumber(maxSub.amount) + ' ₽).', saving: 0 });
+      }
+    });
+
+    subs.forEach(s => {
+      if (s.period === 'yearly' && s.amount > 200) {
+        const monthlyEquiv = s.amount / 12;
+        insights.push({ type: 'save', icon: '💡', title: 'Годовая vs помесячная: ' + s.name, desc: 'Годовая ' + this.formatNumber(s.amount) + ' ₽ (≈ ' + this.formatNumber(monthlyEquiv) + ' ₽/мес).', saving: 0 });
+      }
+    });
+
+    const savings = insights.reduce((s, i) => s + (i.saving || 0), 0);
+
+    this.el.dashTabInsights.innerHTML = `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+        <p class="text-xs font-semibold text-[var(--text-secondary)] mb-1">Инсайты</p>
+        <p class="text-[11px] text-[var(--text-muted)]">Персональные рекомендации на основе ваших подписок</p>
+      </div>
+      ${insights.length === 0 ? `
+        <div class="bg-surface border border-border rounded-2xl shadow-card p-6 text-center">
+          <p class="text-sm font-semibold mb-1">Всё оптимально!</p>
+          <p class="text-xs text-[var(--text-secondary)]">Пока нет замечаний по вашим подпискам</p>
+        </div>` : insights.map(i => `
+        <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+          <div class="flex items-start gap-3">
+            <span class="text-lg shrink-0">${i.icon}</span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold">${this.escapeHtml(i.title)}</p>
+              <p class="text-xs text-[var(--text-secondary)] mt-1">${this.escapeHtml(i.desc)}</p>
+              ${i.saving > 0 ? '<p class="text-xs font-semibold text-accent mt-2">Можно сэкономить: ' + this.formatNumber(i.saving) + ' ₽/мес</p>' : ''}
+            </div>
+          </div>
+        </div>`).join('')}
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+        <p class="text-xs font-semibold text-[var(--text-secondary)] mb-2">Сравнение тарифов</p>
+        ${subs.filter(s => s.period === 'monthly' && s.amount > 100).map(s => {
+          const save = s.amount * 2;
+          return `<div class="flex items-center justify-between py-2 border-b border-border last:border-0">
+            <span class="text-xs">${this.escapeHtml(s.name)}</span>
+            <span class="text-xs font-semibold text-accent">-${this.formatNumber(save)} ₽/год</span>
+          </div>`;
+        }).join('') || '<p class="text-xs text-[var(--text-muted)]">Все подписки уже годовые</p>'}
+      </div>`;
+  }
+
+  /* -------------------- Goals Tab -------------------- */
+  renderGoalsTab(subs) {
+    const totalMonthly = Object.values(this.computeTotals(subs).monthly).reduce((a, b) => a + b, 0);
+    const goalTarget = Math.ceil(totalMonthly / 100) * 100;
+    const saved = parseFloat(localStorage.getItem('subping_saved') || '0');
+    const pct = goalTarget > 0 ? Math.min((saved / goalTarget) * 100, 100) : 0;
+    const streak = parseInt(localStorage.getItem('subping_streak') || '0');
+    const badges = [];
+    if (subs.length >= 3) badges.push({ icon: '🎯', name: 'Трекер', desc: '3+ подписок под контролем' });
+    if (saved >= 500) badges.push({ icon: '💰', name: 'Копилка', desc: 'Сэкономили 500+ ₽' });
+    if (streak >= 2) badges.push({ icon: '🔥', name: 'Стикер', desc: streak + ' мес. подряд' });
+    if (subs.length <= 5) badges.push({ icon: '✨', name: 'Минималист', desc: '5 или менее подписок' });
+
+    this.el.dashTabGoals.innerHTML = `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-xs font-semibold text-[var(--text-secondary)]">Цель: сократить расходы</p>
+          <span class="text-xs font-bold text-accent">${this.formatNumber(saved)} / ${this.formatNumber(goalTarget)} ₽</span>
+        </div>
+        <div class="w-full h-3 bg-surface-2 rounded-full overflow-hidden mb-2">
+          <div class="h-full bg-gradient-to-r from-accent to-accent-hover rounded-full transition-all" style="width:${pct}%"></div>
+        </div>
+        <p class="text-[11px] text-[var(--text-muted)]">${pct >= 100 ? 'Цель достигнута!' : 'Осталось ' + this.formatNumber(goalTarget - saved) + ' ₽'}</p>
+      </div>
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center text-xl">🔥</div>
+          <div>
+            <p class="text-sm font-bold">${streak} ${streak === 1 ? 'месяц' : streak < 5 ? 'месяца' : 'месяцев'}</p>
+            <p class="text-[11px] text-[var(--text-muted)]">Бюджет под контролем</p>
+          </div>
+          <button type="button" id="streak-btn" class="ml-auto text-[10px] font-semibold bg-accent/15 text-accent px-3 py-1.5 rounded-lg">+1</button>
+        </div>
+      </div>
+      ${badges.length > 0 ? `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+        <p class="text-xs font-semibold text-[var(--text-secondary)] mb-3">Бейджи</p>
+        <div class="flex flex-wrap gap-2">
+          ${badges.map(b => '<div class="bg-surface-2 rounded-xl px-3 py-2 flex items-center gap-2"><span class="text-base">' + b.icon + '</span><div><p class="text-xs font-semibold">' + b.name + '</p><p class="text-[10px] text-[var(--text-muted)]">' + b.desc + '</p></div></div>').join('')}
+        </div>
+      </div>` : ''}`;
+
+    this.el.dashTabGoals.querySelector('#streak-btn')?.addEventListener('click', () => {
+      const v = parseInt(localStorage.getItem('subping_streak') || '0') + 1;
+      localStorage.setItem('subping_streak', String(v));
+      this.renderGoalsTab(subs);
+      this.toast('Стрик обновлён!', 'success');
+    });
+  }
+
+
+    subscriptionCardHTML(s) {
     const days = this.daysUntil(s.next_date);
     const u = this.urgencyClasses(days);
     const symbol = App.CURRENCY_SYMBOL[s.currency] || s.currency;
@@ -1468,64 +1871,6 @@ class App {
           </div>
         </div>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="shrink-0 text-[var(--text-muted)]"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>`;
-  }
-
-  analyticsHTML(subs) {
-    const catTotal = {};
-    let total = 0;
-    subs.forEach(s => {
-      const m = s.period === 'yearly' ? s.amount / 12 : s.amount;
-      const c = s.category || 'Другое';
-      catTotal[c] = (catTotal[c] || 0) + m;
-      total += m;
-    });
-    const cats = Object.entries(catTotal).sort((a, b) => b[1] - a[1]);
-    const colors = ['#6366f1', '#22c55e', '#eab308', '#f43f5e', '#0ea5e9', '#a855f7', '#f97316', '#14b8a6'];
-    const r = 42, C = 2 * Math.PI * r;
-    let offset = 0;
-    const segs = cats.map(([c, v], i) => {
-      const frac = v / total;
-      const seg = `<circle cx="60" cy="60" r="${r}" fill="none" stroke="${colors[i % 8]}" stroke-width="13" stroke-dasharray="${(frac * C).toFixed(2)} ${(C - frac * C).toFixed(2)}" stroke-dashoffset="${(-offset * C).toFixed(2)}" transform="rotate(-90 60 60)"/>`;
-      offset += frac;
-      return seg;
-    }).join('');
-    const legend = cats.map(([c, v], i) => `
-      <div class="flex items-center justify-between gap-3 text-xs">
-        <span class="flex items-center gap-2 text-[var(--text-secondary)] min-w-0"><span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background:${colors[i % 8]}"></span><span class="truncate">${this.escapeHtml(c)}</span></span>
-        <span class="shrink-0 font-semibold">${this.formatNumber(v)} ₽ <span class="text-[var(--text-muted)] font-normal">${(v / total * 100).toFixed(0)}%</span></span>
-      </div>`).join('');
-    const upcoming = [...subs].sort((a, b) => this.daysUntil(a.next_date) - this.daysUntil(b.next_date)).slice(0, 5)
-      .map(s => {
-        const d = this.daysUntil(s.next_date);
-        const u = this.urgencyClasses(d);
-        const symbol = App.CURRENCY_SYMBOL[s.currency] || s.currency;
-        return `
-        <div class="flex items-center justify-between gap-3 text-xs">
-          <span class="flex items-center gap-2 min-w-0"><span class="w-1.5 h-1.5 rounded-full shrink-0 ${u.dot}"></span><span class="truncate">${this.escapeHtml(s.name)} · ${this.formatNumber(s.amount)} ${symbol}</span></span>
-          <span class="shrink-0 font-medium ${u.text}">${this.formatDaysLabel(d)}</span>
-        </div>`;
-      }).join('');
-    return `
-      <div class="bg-surface border border-border rounded-2xl shadow-card p-4 fade-in">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-sm font-semibold">Аналитика</p>
-          <span class="text-[11px] font-bold text-accent-400 bg-accent/10 px-2 py-0.5 rounded-full">Premium</span>
-        </div>
-        <div class="grid grid-cols-[auto_1fr] items-center gap-5">
-          <div class="relative shrink-0">
-            <svg width="120" height="120" viewBox="0 0 120 120">${segs}</svg>
-            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span class="text-[10px] text-[var(--text-secondary)] leading-none">в месяц</span>
-              <span class="text-sm font-bold leading-tight">${this.formatNumber(total)} ₽</span>
-            </div>
-          </div>
-          <div class="flex flex-col gap-2 min-w-0">${legend}</div>
-        </div>
-        <div class="mt-4 pt-3 border-t border-border">
-          <p class="text-[11px] font-semibold text-[var(--text-secondary)] mb-2">Ближайшие списания</p>
-          <div class="flex flex-col gap-1.5">${upcoming}</div>
-        </div>
       </div>`;
   }
 
