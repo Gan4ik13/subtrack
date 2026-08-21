@@ -1164,7 +1164,7 @@ class App {
       </div>`;
     document.body.appendChild(modal);
     const close = () => modal.remove();
-    modal.querySelector('.limit-close')?.addEventListener('click', close);
+    modal.querySelectorAll('.limit-close').forEach(btn => btn.addEventListener('click', close));
     modal.addEventListener('click', e => { if (e.target === modal) close(); });
     modal.querySelector('.limit-register')?.addEventListener('click', () => { close(); this.clearSession(); this.switchView('login'); this.setAuthMode('register'); });
   }
