@@ -756,10 +756,19 @@ class App {
     this.bindEvents();
     this.setAuthMode('login');
     await loadTunnelBase();
+
+    const params = new URLSearchParams(window.location.search);
+    const authParam = params.get('login') || params.get('register');
+
     if (this.state.token) {
       this.loadMe()
         .then(() => this.switchView('dashboard'))
         .catch(() => { this.state.token = null; localStorage.removeItem(App.TOKEN_KEY); this.startDemo(); });
+    } else if (authParam) {
+      this.clearSession();
+      this.switchView('dashboard');
+      this.openAuthModal(params.get('register') ? 'register' : 'login');
+      window.history.replaceState({}, '', window.location.pathname);
     } else {
       this.startDemo();
     }
