@@ -163,7 +163,7 @@
     <h2 class="text-[22px] leading-[1.2] font-extrabold tracking-tight">Больше не плати за <span class="text-accent-400">забытые подписки</span></h2>
     <p class="text-sm text-[var(--text-secondary)] mt-3 mb-5">SubPing собирает все списания в одном месте и напоминает в Telegram до того, как деньги уйдут.</p>
     <div class="flex flex-col gap-2.5 mb-3">
-      <a href="#how-section" id="hero-demo-btn" class="w-full bg-surface border border-border hover:border-accent/50 text-[var(--text-secondary)] hover:text-white text-sm font-semibold rounded-xl py-2.5 transition-colors flex items-center justify-center gap-2">
+      <a href="#how-it-works" id="hero-demo-btn" class="w-full bg-surface border border-border hover:border-accent/50 text-[var(--text-secondary)] hover:text-white text-sm font-semibold rounded-xl py-2.5 transition-colors flex items-center justify-center gap-2">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
         Посмотреть, как работает
       </a>
@@ -215,7 +215,7 @@
   </div>
 
   <!-- ===== TABS ===== -->
-  <div class="mb-4">
+  <div id="how-it-works" class="mb-4">
     <div class="flex bg-surface-2 rounded-xl p-1 text-[11px] font-medium mb-4">
       <button type="button" data-tab="how" class="tab-btn flex-1 py-2 rounded-lg transition-colors text-center">Как работает</button>
       <button type="button" data-tab="compare" class="tab-btn flex-1 py-2 rounded-lg transition-colors text-center">Сравнение</button>
@@ -359,7 +359,7 @@
       <input type="email" id="checklist-email" placeholder="Ваш email" class="flex-1 rounded-xl px-3.5 py-2.5 text-sm">
       <button type="button" id="checklist-submit" class="shrink-0 bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl px-4 py-2.5">Получить</button>
     </div>
-    <p id="checklist-done" class="hidden text-xs text-success mt-2 text-center">Чек-лист отправлен! Проверьте почту.</p>
+    <p id="checklist-done" style="display:none" class="text-xs text-success mt-2 text-center">Чек-лист отправлен! Проверьте почту.</p>
   </div>
 
   <!-- Footer -->
@@ -416,16 +416,16 @@
     // Hero "how it works" button scrolls to tabs
     document.getElementById('hero-demo-btn')?.addEventListener('click', function (e) {
       e.preventDefault();
-      document.querySelector('.tab-btn')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
     // Checklist email form
     document.getElementById('checklist-submit')?.addEventListener('click', function () {
       const email = document.getElementById('checklist-email')?.value?.trim();
       if (!email || !email.includes('@')) return;
-      document.getElementById('checklist-email').classList.add('hidden');
-      document.getElementById('checklist-submit').classList.add('hidden');
-      document.getElementById('checklist-done')?.classList.remove('hidden');
+      document.getElementById('checklist-email').style.display = 'none';
+      document.getElementById('checklist-submit').style.display = 'none';
+      document.getElementById('checklist-done').style.display = '';
     });
   })();
 </script>
