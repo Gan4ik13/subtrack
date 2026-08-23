@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SubPing — трекер подписок</title>
+<meta name="description" content="SubPing — трекер подписок: учитывайте списания, планируйте расходы и получайте напоминания в Telegram. Бесплатно до 3 подписок, Premium 15 ₽/мес.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SubPing">
+<meta property="og:title" content="SubPing — трекер подписок">
+<meta property="og:description" content="Учитывайте подписки, следите за списаниями и получайте напоминания в Telegram. Бесплатно до 3 подписок, Premium 15 ₽/мес.">
+<meta property="og:url" content="https://subping.ru/">
+<meta property="og:image" content="https://subping.ru/og-image.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0c10">
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=111766811', 'ym');
+
+    ym(111766811, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/111766811" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SubPing">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'sans-serif'] },
+        colors: {
+          accent: { DEFAULT: '#6366f1', hover:'#4f46e5', 50:'#eef2ff',100:'#e0e7ff',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca' },
+          surface: '#15161d',
+          surface2: '#1c1e29',
+          border: '#272a38'
+        },
+        boxShadow: {
+          card: '0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.5)',
+          glow: '0 0 0 1px rgba(99,102,241,.4), 0 8px 24px -8px rgba(99,102,241,.35)'
+        },
+        borderRadius: { '2xl': '1rem', '3xl': '1.5rem' }
+      }
+    }
+  }
+</script>
+<style>
+  /* === Design tokens === */
+  :root{
+    --bg:#0b0c10;
+    --surface:#15161d;
+    --surface-2:#1c1e29;
+    --border:#272a38;
+    --text-primary:#f1f2f6;
+    --text-secondary:#9497a8;
+    --text-muted:#5c5f70;
+    --accent:#6366f1;
+    --accent-400:#818cf8;
+    --accent-hover:#4f46e5;
+    --success:#22c55e;
+    --warning:#eab308;
+    --danger:#f43f5e;
+  }
+  *{ -webkit-tap-highlight-color: transparent; }
+  html,body{ background:var(--bg); color:var(--text-primary); font-family:'Inter',sans-serif; }
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:8px; }
+  .hidden{ display:none !important; }
+  input:focus, select:focus, button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  input, select{ background:var(--surface-2); border:1px solid var(--border); color:var(--text-primary); }
+  input::placeholder{ color:var(--text-muted); }
+  .card-hover{ transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+  .card-hover:hover{ transform:translateY(-2px); border-color:#3a3d52; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .fade-in{ animation:fadeIn .25s ease both; }
+  @keyframes toastIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  .toast{ animation:toastIn .2s ease both; }
+  .ring-dot{ box-shadow:0 0 0 3px rgba(255,255,255,.06); }
+  summary::-webkit-details-marker{ display:none; }
+  input[type="range"]{ -webkit-appearance:none; appearance:none; height:8px; border-radius:4px; background:var(--surface-2); outline:none; }
+  input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:20px; height:20px; border-radius:50%; background:var(--accent); cursor:pointer; border:2px solid var(--bg); box-shadow:0 1px 4px rgba(0,0,0,.3); }
+  input[type="range"]::-moz-range-thumb{ width:20px; height:20px; border-radius:50%; background:var(--accent); cursor:pointer; border:2px solid var(--bg); box-shadow:0 1px 4px rgba(0,0,0,.3); }
+</style>
+<script>
+  /* Apply saved theme before first paint to avoid flash */
+  (function () {
+    try {
+      if (localStorage.getItem('subping-theme') === 'light') {
+        document.documentElement.dataset.theme = 'light';
+      }
+    } catch (e) {}
+  })();
+</script>
+<style>
+  /* === Light theme === */
+  :root[data-theme="light"]{
+    --bg:#f4f5fa;
+    --surface:#ffffff;
+    --surface-2:#edf0f6;
+    --border:#e2e5ee;
+    --text-primary:#17181f;
+    --text-secondary:#565b6a;
+    --text-muted:#9499a8;
+    --accent:#5b54e8;
+    --accent-400:#6f6bf2;
+    --accent-hover:#4f46e5;
+  }
+  [data-theme="light"] .bg-surface{ background-color:var(--surface); }
+  [data-theme="light"] .bg-surface-2{ background-color:var(--surface-2); }
+  [data-theme="light"] .hover\:bg-surface-2:hover{ background-color:var(--surface-2); }
+  [data-theme="light"] .bg-surface-2\/60{ background-color:color-mix(in srgb, var(--surface-2) 60%, transparent); }
+  [data-theme="light"] .border-border{ border-color:var(--border); }
+  [data-theme="light"] .bg-accent{ background-color:var(--accent); }
+  [data-theme="light"] .hover\:bg-accent-hover:hover{ background-color:var(--accent-hover); }
+  [data-theme="light"] .text-accent{ color:var(--accent); }
+  [data-theme="light"] .hover\:text-accent:hover{ color:var(--accent); }
+  [data-theme="light"] .text-accent-400{ color:var(--accent-400); }
+  [data-theme="light"] .hover\:text-accent-400:hover{ color:var(--accent-400); }
+  [data-theme="light"] .bg-accent\/10{ background-color:color-mix(in srgb, var(--accent) 10%, transparent); }
+  [data-theme="light"] .bg-accent\/15{ background-color:color-mix(in srgb, var(--accent) 15%, transparent); }
+  [data-theme="light"] .border-accent\/30{ border-color:color-mix(in srgb, var(--accent) 30%, transparent); }
+  [data-theme="light"] .border-accent\/50, [data-theme="light"] .hover\:border-accent\/50:hover{ border-color:color-mix(in srgb, var(--accent) 50%, transparent); }
+  [data-theme="light"] .bg-\[rgba\(11\,12\,16\,\.85\)\]{ background-color:color-mix(in srgb, var(--bg) 85%, transparent); }
+  [data-theme="light"] .shadow-card{ box-shadow:0 1px 2px rgba(15,23,42,.06), 0 8px 24px -12px rgba(15,23,42,.12); }
+  [data-theme="light"] .shadow-glow{ box-shadow:0 0 0 1px rgba(91,84,232,.25), 0 8px 24px -8px rgba(91,84,232,.2); }
+  [data-theme="light"] .card-hover:hover{ border-color:var(--border); }
+  [data-theme="light"] .ring-dot{ box-shadow:0 0 0 3px rgba(15,23,42,.06); }
+  .icon-moon{ display:none; }
+  :root[data-theme="light"] .icon-moon{ display:block; }
+  :root[data-theme="light"] .icon-sun{ display:none; }
+</style>
+</head>
+<body class="min-h-screen antialiased">
+
+<div id="toast-container" class="fixed bottom-4 right-4 left-4 sm:left-auto z-[100] flex flex-col gap-2 items-stretch sm:items-end pointer-events-none"></div>
+
+<!-- ======================= AUTH MODAL ======================= -->
+<div id="auth-modal" class="hidden fixed inset-0 z-50 bg-[rgba(11,12,16,.85)] backdrop-blur-sm p-4 items-center justify-center">
+  <div class="w-full max-w-sm mx-auto fade-in relative">
+    <button type="button" id="auth-modal-close" class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors z-10" aria-label="Закрыть">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#9497a8" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="flex items-center gap-2 justify-center mb-6">
+      <div class="w-9 h-9 rounded-xl bg-accent flex items-center justify-center shadow-glow shrink-0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <span class="text-lg font-bold tracking-tight">SubPing</span>
+    </div>
+    <div class="bg-surface border border-border rounded-2xl shadow-card p-6">
+      <div class="flex bg-surface-2 rounded-xl p-1 mb-6 text-sm font-medium">
+        <button type="button" data-auth-tab="login" class="flex-1 py-2 rounded-lg transition-colors">Вход</button>
+        <button type="button" data-auth-tab="register" class="flex-1 py-2 rounded-lg transition-colors">Регистрация</button>
+      </div>
+      <form id="auth-form" class="flex flex-col gap-3" novalidate>
+        <div>
+          <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Email</label>
+          <input type="email" id="auth-email" required placeholder="you@example.com" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Пароль</label>
+          <input type="password" id="auth-password" required minlength="4" placeholder="Минимум 4 символа" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+        </div>
+        <div id="consent-row" class="hidden items-start gap-2 text-[11px] leading-snug text-[var(--text-secondary)]">
+          <input type="checkbox" id="auth-consent" class="mt-0.5 shrink-0 w-3.5 h-3.5 accent-accent">
+          <label for="auth-consent">Я принимаю <a href="offer.html" target="_blank" rel="noopener" class="text-accent-400 underline">публичную оферту</a> и <a href="privacy_policy.html" target="_blank" rel="noopener" class="text-accent-400 underline">политику конфиденциальности</a></label>
+        </div>
+        <p id="auth-error" class="text-xs text-[var(--danger)] hidden"></p>
+        <button type="submit" id="auth-submit" class="mt-2 bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5">Войти</button>
+      </form>
+    </div>
+    <p class="text-center text-[11px] text-[var(--text-muted)] mt-4">Бесплатно — до 3 подписок · Premium — безлимит за 15 ₽/мес</p>
+  </div>
+</div>
+
+<!-- Exit-intent popup -->
+<div id="exit-popup" class="hidden fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm p-4 items-center justify-center">
+  <div class="bg-surface border border-border rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center relative">
+    <button type="button" id="exit-popup-close" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center hover:bg-accent/20 transition-colors" aria-label="Закрыть">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#9497a8" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="w-12 h-12 rounded-full bg-warning/15 flex items-center justify-center mx-auto mb-4">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z" stroke="#eab308" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <p class="text-base font-bold mb-2">5 подписок, которые вы точно забыли отменить</p>
+    <p class="text-xs text-[var(--text-secondary)] mb-4">Получите чек-лист с самыми «невидимыми» списаниями + советы по экономии.</p>
+    <div class="flex flex-col gap-2">
+      <input type="email" id="exit-popup-email" placeholder="Ваш email" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+      <button type="button" id="exit-popup-submit" class="bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5">Получить чек-лист</button>
+      <button type="button" id="exit-popup-later" class="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">Нет, спасибо</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= VIEW: DASHBOARD ======================= -->
+<section data-view="dashboard" class="min-h-screen pb-0">
+  <!-- Header -->
+  <header class="border-b border-border sticky top-0 z-30 bg-[rgba(11,12,16,.85)] backdrop-blur">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <a href="index.html" class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="font-bold tracking-tight text-[15px]">SubPing</span>
+        </a>
+        <span id="premium-badge" class="hidden ml-1 text-[10px] font-bold uppercase tracking-wide bg-accent/15 text-accent px-2 py-0.5 rounded-full">Premium</span>
+        <span id="week-badge" class="hidden ml-1 text-[10px] font-semibold bg-warning/15 text-warning px-2 py-0.5 rounded-full"></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" id="header-login-btn" class="hidden text-xs font-semibold bg-accent/15 text-accent hover:bg-accent hover:text-white px-3 py-1.5 rounded-lg transition-colors">Войти</button>
+        <button type="button" data-theme-toggle title="Сменить тему" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Сменить тему">
+          <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="#9497a8" stroke-width="1.7"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" stroke="#9497a8" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" data-doc="how" title="Как это работает" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Как это работает">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#9497a8" stroke-width="1.7"/><path d="M9.5 9a2.5 2.5 0 114.9.8c-.5 1-1.9 1.5-1.9 2.7" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="#9497a8"/></svg>
+        </button>
+        <button type="button" data-nav="settings" title="Настройки" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Настройки">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="#9497a8" stroke-width="1.7"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="#9497a8" stroke-width="1.4"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 pt-6">
+    <!-- Summary -->
+    <div class="grid grid-cols-2 gap-3 mb-6">
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+        <p class="text-xs text-[var(--text-secondary)] mb-1">В месяц</p>
+        <p id="summary-monthly" class="text-lg font-bold tracking-tight leading-tight">—</p>
+      </div>
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+        <p class="text-xs text-[var(--text-secondary)] mb-1">В год</p>
+        <p id="summary-yearly" class="text-lg font-bold tracking-tight leading-tight">—</p>
+      </div>
+    </div>
+
+    <!-- Onboarding checklist -->
+    <div id="onboarding-checklist" class="hidden mb-4"></div>
+
+    <div class="flex items-center justify-between mb-3">
+      <h1 class="text-sm font-semibold text-[var(--text-secondary)]">Подписки <span id="sub-count" class="text-[var(--text-muted)]"></span></h1>
+      <button type="button" data-action="open-add" class="text-xs font-semibold bg-accent hover:bg-accent-hover text-white px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>
+        Добавить
+      </button>
+    </div>
+
+    <!-- Subscriptions list -->
+    <div id="subscriptions-list" class="flex flex-col gap-2.5"></div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="hidden flex-col items-center text-center py-16 px-6">
+      <svg width="120" height="96" viewBox="0 0 120 96" fill="none" class="mb-5 opacity-90">
+        <rect x="14" y="20" width="70" height="52" rx="10" fill="#1c1e29" stroke="#272a38" stroke-width="1.5"/>
+        <rect x="30" y="4" width="70" height="52" rx="10" fill="#15161d" stroke="#272a38" stroke-width="1.5"/>
+        <circle cx="65" cy="30" r="10" fill="#6366f1" fill-opacity=".18"/>
+        <path d="M60 30l3.5 3.5L71 26" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="40" y="42" width="50" height="4" rx="2" fill="#272a38"/>
+        <rect x="40" y="50" width="34" height="4" rx="2" fill="#272a38"/>
+      </svg>
+      <p class="text-sm font-semibold mb-1">Пока нет подписок</p>
+      <p class="text-xs text-[var(--text-secondary)] max-w-[220px] mb-5">Добавьте первую подписку, чтобы отслеживать списания и не платить лишнего</p>
+      <button type="button" data-action="open-add" class="text-xs font-semibold bg-accent hover:bg-accent-hover text-white px-4 py-2.5 rounded-xl transition-colors">Добавить подписку</button>
+    </div>
+
+    <!-- Free-tier limit banner -->
+    <div id="limit-banner" class="hidden mt-4 border border-accent/30 bg-accent/10 rounded-2xl p-4 flex items-center justify-between gap-3">
+      <div class="min-w-0">
+        <p class="flex items-center gap-1.5 text-[13px] font-semibold text-accent-400">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="shrink-0"><path d="M5 11V9a7 7 0 0114 0v2M7 11h10a2 2 0 012 2v5a2 2 0 01-2 2H7a2 2 0 01-2-2v-5a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          Лимит бесплатного тарифа
+        </p>
+        <p class="text-xs text-[var(--text-secondary)] mt-1">До 3 подписок на бесплатном тарифе. Premium — безлимит и Telegram-уведомления о списаниях.</p>
+      </div>
+      <button type="button" data-nav="settings" class="shrink-0 text-xs font-bold bg-accent hover:bg-accent-hover text-white px-3.5 py-2.5 rounded-xl transition-colors">Улучшить</button>
+    </div>
+
+    <!-- Digest -->
+    <div id="digest-section" class="hidden mt-6 mb-6"></div>
+
+    <!-- Dashboard tabs -->
+    <div id="dash-tabs" class="hidden mb-6">
+      <div class="flex bg-surface-2 rounded-xl p-1 mb-4 text-xs font-medium">
+        <button type="button" data-dash-tab="analytics" class="dash-tab flex-1 py-2 rounded-lg transition-colors">Аналитика</button>
+        <button type="button" data-dash-tab="calendar" class="dash-tab flex-1 py-2 rounded-lg transition-colors">Календарь</button>
+        <button type="button" data-dash-tab="insights" class="dash-tab flex-1 py-2 rounded-lg transition-colors">Инсайты</button>
+        <button type="button" data-dash-tab="goals" class="dash-tab flex-1 py-2 rounded-lg transition-colors">Цели</button>
+      </div>
+      <div id="dash-tab-analytics" class="hidden"></div>
+      <div id="dash-tab-calendar" class="hidden"></div>
+      <div id="dash-tab-insights" class="hidden"></div>
+      <div id="dash-tab-goals" class="hidden"></div>
+    </div>
+
+    <footer class="mt-8 pt-6 border-t border-border text-center">
+      <nav class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-[var(--text-secondary)]">
+        <a href="index.html" class="hover:text-accent-400 transition-colors">Сайт</a>
+        <button type="button" data-doc="how" class="hover:text-accent-400 transition-colors">Как это работает</button>
+        <button type="button" data-doc="delivery" class="hover:text-accent-400 transition-colors">Оплата и получение</button>
+        <a href="offer.html" class="hover:text-accent-400 transition-colors">Публичная оферта</a>
+        <a href="privacy_policy.html" class="hover:text-accent-400 transition-colors">Конфиденциальность</a>
+        <a href="requisites.html" class="hover:text-accent-400 transition-colors">Реквизиты</a>
+        <button type="button" data-doc="contacts" class="hover:text-accent-400 transition-colors">Контакты</button>
+      </nav>
+      <p class="text-[11px] text-[var(--text-muted)] mt-3">© 2026 SubPing</p>
+    </footer>
+  </div>
+</section>
+
+<!-- ======================= VIEW: SETTINGS ======================= -->
+<section data-view="settings" class="hidden min-h-screen pb-16">
+  <header class="border-b border-border sticky top-0 z-30 bg-[rgba(11,12,16,.85)] backdrop-blur">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
+      <button type="button" data-nav="dashboard" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Назад">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="font-bold tracking-tight text-[15px]">Настройки</span>
+      <div class="ml-auto flex items-center gap-2">
+        <button type="button" id="settings-login-btn" class="hidden text-xs font-semibold bg-accent/15 text-accent hover:bg-accent hover:text-white px-3 py-1.5 rounded-lg transition-colors">Войти</button>
+        <button type="button" data-theme-toggle title="Сменить тему" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Сменить тему">
+          <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="#9497a8" stroke-width="1.7"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" stroke="#9497a8" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 pt-6 flex flex-col gap-4">
+    <!-- Account -->
+    <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+      <p class="text-xs text-[var(--text-secondary)] mb-1">Аккаунт</p>
+      <p id="settings-email" class="text-sm font-semibold">—</p>
+    </div>
+
+    <!-- Premium -->
+    <div id="premium-card" class="bg-surface border border-border rounded-2xl shadow-card p-4"></div>
+
+    <!-- Payments (owner only) -->
+    <div id="payments-card" class="hidden bg-surface border border-border rounded-2xl shadow-card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-sm font-semibold">Платежи</p>
+        <span class="text-[11px] font-bold text-accent-400 bg-accent/10 px-2 py-0.5 rounded-full">Владелец</span>
+      </div>
+      <div id="payments-list" class="flex flex-col gap-2 text-xs"></div>
+    </div>
+
+    <!-- Telegram notifications -->
+    <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+      <p class="text-sm font-semibold mb-1">Telegram-уведомления</p>
+      <p class="text-[11px] text-[var(--text-secondary)] mb-3">Напоминания о списаниях приходят в личку бота. Укажите ваш числовой ID — узнать можно у <a href="https://t.me/userinfobot" target="_blank" rel="noopener" class="text-accent-400 underline">@userinfobot</a>. Период напоминания настраивается в карточке Premium.</p>
+      <div class="flex gap-2">
+        <input type="text" id="tg-chat-id" placeholder="Например, 123456789" class="flex-1 rounded-xl px-3.5 py-2.5 text-sm min-w-0">
+        <button type="button" id="tg-save" class="shrink-0 text-xs font-semibold bg-accent hover:bg-accent-hover text-white px-3.5 py-2 rounded-lg transition-colors">Сохранить</button>
+      </div>
+      <button type="button" id="tg-connect" class="mt-2 w-full text-xs font-semibold border border-border hover:border-accent/50 rounded-xl py-2.5 transition-colors">Подключить через бота</button>
+      <p id="tg-hint" class="hidden text-[11px] mt-2 text-[var(--success)]">Сохранено. Бот пришлёт напоминания о списаниях.</p>
+    </div>
+
+    <!-- Export -->
+    <div class="bg-surface border border-border rounded-2xl shadow-card p-4 flex items-center justify-between gap-3">
+      <div>
+        <p class="text-sm font-semibold">Экспорт данных</p>
+        <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">Скачать все подписки в формате JSON</p>
+      </div>
+      <button type="button" data-action="export-json" class="shrink-0 text-[11px] font-semibold px-3 py-2 rounded-lg transition-colors border border-border hover:border-accent/50">Экспорт</button>
+    </div>
+
+    <!-- Docs -->
+    <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+      <p class="text-sm font-semibold mb-3">Информация</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button type="button" data-doc="how" class="text-[11px] font-semibold border border-border hover:border-accent/50 rounded-xl py-2.5 transition-colors">Как это работает</button>
+        <button type="button" data-doc="delivery" class="text-[11px] font-semibold border border-border hover:border-accent/50 rounded-xl py-2.5 transition-colors">Оплата и получение</button>
+        <a href="privacy_policy.html" class="text-[11px] font-semibold text-center border border-border hover:border-accent/50 rounded-xl py-2.5 transition-colors">Конфиденциальность</a>
+        <a href="offer.html" class="text-[11px] font-semibold text-center border border-border hover:border-accent/50 rounded-xl py-2.5 transition-colors">Публичная оферта</a>
+        <a href="requisites.html" class="text-[11px] font-semibold text-center border border-border hover:border-accent/50 rounded-xl py-2.5 transition-colors">Реквизиты</a>
+        <button type="button" data-doc="contacts" class="text-[11px] font-semibold border border-border hover:border-accent/50 rounded-xl py-2.5 transition-colors">Контакты</button>
+      </div>
+    </div>
+
+    <button type="button" data-action="logout" class="mt-2 text-xs font-semibold text-[var(--danger)] border border-[var(--danger)]/30 bg-[var(--danger)]/10 rounded-xl py-2.5 hover:bg-[var(--danger)]/15 transition-colors">Выйти из аккаунта</button>
+
+    <footer class="mt-8 pt-6 border-t border-border text-center">
+      <nav class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-[var(--text-secondary)]">
+        <a href="index.html" class="hover:text-accent-400 transition-colors">Сайт</a>
+        <button type="button" data-doc="how" class="hover:text-accent-400 transition-colors">Как это работает</button>
+        <button type="button" data-doc="delivery" class="hover:text-accent-400 transition-colors">Оплата и получение</button>
+        <a href="offer.html" class="hover:text-accent-400 transition-colors">Публичная оферта</a>
+        <a href="privacy_policy.html" class="hover:text-accent-400 transition-colors">Конфиденциальность</a>
+        <a href="requisites.html" class="hover:text-accent-400 transition-colors">Реквизиты</a>
+        <button type="button" data-doc="contacts" class="hover:text-accent-400 transition-colors">Контакты</button>
+      </nav>
+      <p class="text-[11px] text-[var(--text-muted)] mt-3">© 2026 SubPing</p>
+    </footer>
+  </div>
+</section>
+
+<!-- ======================= MODAL: ADD/EDIT SUBSCRIPTION ======================= -->
+<div id="subscription-modal" class="hidden fixed inset-0 z-[90] items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+  <div class="bg-surface w-full sm:max-w-md sm:rounded-3xl rounded-t-3xl border border-border shadow-card p-6 fade-in max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h2 id="sub-modal-title" class="text-base font-bold">Новая подписка</h2>
+      <button type="button" data-action="close-sub-modal" class="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center" aria-label="Закрыть">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#9497a8" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <form id="sub-form" class="flex flex-col gap-3.5" novalidate>
+      <input type="hidden" id="sub-id">
+      <div id="popular-box" class="bg-surface-2/60 border border-border rounded-xl p-3">
+        <p class="text-[11px] font-semibold text-[var(--text-secondary)] mb-2">Популярные сервисы — нажмите, чтобы заполнить</p>
+        <div id="popular-grid" class="flex flex-wrap gap-1.5"></div>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Название</label>
+        <div class="relative">
+          <input type="text" id="sub-name" required maxlength="40" placeholder="Яндекс Плюс, Иви, Telegram Premium…" class="w-full rounded-xl px-3.5 py-2.5 text-sm" autocomplete="off">
+          <div id="sub-suggest" class="hidden absolute z-20 mt-1.5 w-full bg-surface border border-border rounded-xl shadow-card overflow-hidden"></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Сумма</label>
+          <input type="number" id="sub-amount" required min="0.01" step="0.01" placeholder="599" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Валюта</label>
+          <select id="sub-currency" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+            <option value="RUB">₽ RUB</option>
+            <option value="USD">$ USD</option>
+            <option value="EUR">€ EUR</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Периодичность</label>
+          <select id="sub-period" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+            <option value="monthly">Ежемесячно</option>
+            <option value="yearly">Ежегодно</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Категория</label>
+          <select id="sub-category" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+            <option>Развлечения</option>
+            <option>Работа</option>
+            <option>Здоровье</option>
+            <option>Образование</option>
+            <option>Утилиты</option>
+            <option>Другое</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Следующее списание</label>
+        <input type="date" id="sub-date" required class="w-full rounded-xl px-3.5 py-2.5 text-sm">
+      </div>
+      <p id="sub-error" class="text-xs text-[var(--danger)] hidden"></p>
+      <div class="flex gap-2.5 mt-2">
+        <button type="button" id="sub-delete" class="hidden text-xs font-semibold text-[var(--danger)] border border-[var(--danger)]/30 bg-[var(--danger)]/10 rounded-xl px-4 py-2.5 hover:bg-[var(--danger)]/15 transition-colors">Удалить</button>
+        <button type="submit" class="flex-1 bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================= MODAL: PREMIUM / PAYMENT ======================= -->
+<div id="payment-modal" class="hidden fixed inset-0 z-[95] items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+  <div class="relative bg-surface w-full sm:max-w-sm sm:rounded-3xl rounded-t-3xl border border-border shadow-card p-6 fade-in">
+    <button type="button" data-action="close-payment" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center" aria-label="Закрыть">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#9497a8" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div id="payment-modal-body"></div>
+  </div>
+</div>
+
+<!-- ======================= MODAL: DOCS (OFFER / REQUISITES / PRICING) ======================= -->
+<div id="doc-modal" class="hidden fixed inset-0 z-[95] items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+  <div class="bg-surface w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl border border-border shadow-card fade-in max-h-[92vh] overflow-y-auto">
+    <div class="sticky top-0 bg-surface z-10 flex items-center justify-between px-6 pt-5 pb-3 border-b border-border">
+      <h2 id="doc-modal-title" class="text-base font-bold"></h2>
+      <button type="button" data-action="close-doc" class="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center" aria-label="Закрыть">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#9497a8" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div id="doc-modal-body" class="px-6 py-5 text-[13px] leading-relaxed text-[var(--text-secondary)]"></div>
+  </div>
+</div>
+
+<div id="share-modal" class="hidden fixed inset-0 z-[95] items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+  <div class="bg-surface w-full sm:max-w-md sm:rounded-3xl rounded-t-3xl border border-border shadow-card fade-in">
+    <div class="flex items-center justify-between px-6 pt-5 pb-3 border-b border-border">
+      <h2 class="text-base font-bold">Поделиться</h2>
+      <button type="button" id="share-close" class="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center" aria-label="Закрыть">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#9497a8" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="px-6 py-5">
+      <div id="share-card" class="bg-gradient-to-br from-accent/20 via-surface-2 to-accent/10 border border-accent/30 rounded-2xl p-5 text-center mb-4">
+        <p class="text-xs text-accent-400 font-semibold mb-2">SubPing</p>
+        <p class="text-2xl font-extrabold tracking-tight mb-1">Я сэкономил <span id="share-amount">0</span> ₽</p>
+        <p class="text-xs text-[var(--text-secondary)]">благодаря контролю подписок</p>
+        <div class="mt-3 pt-3 border-t border-accent/20 text-[10px] text-[var(--text-muted)]">subping.ru</div>
+      </div>
+      <button type="button" id="share-copy" class="w-full bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-xl py-2.5 transition-colors">Скопировать текст</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASES = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? ['http://localhost:8000']
+  : location.hostname.endsWith('.ts.net')
+    ? [location.origin]
+    : ['https://vercel-proxy-murex-six.vercel.app', 'https://subtrack-api-jszq.onrender.com'];
+
+async function loadTunnelBase() {
+  try {
+    const r = await fetch('./tunnel.txt', { cache: 'no-cache' });
+    const t = (await r.text()).trim();
+    if (/^https:\/\/[a-z0-9.-]+\.(?:ts\.net|trycloudflare\.com|vercel\.app)$/.test(t) && !API_BASES.includes(t)) API_BASES.push(t);
+  } catch (e) {}
+}
+
+const SELLER = {
+  name: 'Гончаров Михаил Владимирович',
+  inn: '772623564429',
+  phone: '+7 (977) 564-95-17',
+  tg: '@Gan4ik13',
+  email: 'gan4ik13@yandex.ru',
+  domain: 'https://subping.ru'
+};
+
+const DOCS = {
+  offer: {
+    title: 'Публичная оферта',
+    html: `
+      <h3 class="text-sm font-bold text-[var(--text-primary)] mb-1">ПУБЛИЧНАЯ ОФЕРТА</h3>
+      <p class="text-xs mb-4">об оказании услуг по предоставлению доступа к сервису «SubPing»</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">1. Общие положения</h4>
+      <p>1.1. Настоящий документ является официальным предложением (публичной офертой) Исполнителя заключить договор об оказании услуг на условиях настоящей оферты (ст. 437 Гражданского кодекса РФ).</p>
+      <p class="mt-2">1.2. Акцептом (принятием) оферты является оплата услуг в порядке, предусмотренном разделом 4. Совершение акцепта означает полное и безоговорочное согласие Пользователя с условиями оферты.</p>
+      <p class="mt-2">1.3. Исполнитель: <span class="text-[var(--text-primary)] font-medium">${SELLER.name}</span>, ИНН <span class="text-[var(--text-primary)] font-medium">${SELLER.inn}</span> — самозанятый, применяет налог на профессиональный доход (НПД).</p>
+      <p class="mt-2">1.4. Сервис «SubPing» — онлайн-сервис для учёта и отслеживания подписок, доступный по адресу <a href="${SELLER.domain}" target="_blank" rel="noopener" class="text-accent-400 underline">${SELLER.domain}</a>.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">2. Предмет договора</h4>
+      <p>2.1. Исполнитель предоставляет Пользователю доступ к функционалу сервиса «SubPing».</p>
+      <p class="mt-2">2.2. Бесплатный тариф: до 3 подписок, базовая статистика, экспорт данных в JSON.</p>
+      <p class="mt-2">2.3. Тариф Premium (15 ₽/мес): неограниченное число подписок, аналитика расходов по категориям, ближайшие списания, Telegram-напоминания за 1/3/7 дней, экспорт в CSV.</p>
+      <p class="mt-2">2.4. Услуги оказываются дистанционно через сеть Интернет в электронном виде, без передачи материального носителя.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">3. Стоимость услуг</h4>
+      <p>3.1. Стоимость тарифа Premium — 15 (пятнадцать) рублей за 1 (один) месяц.</p>
+      <p class="mt-2">3.2. Исполнитель вправе изменить стоимость услуг в одностороннем порядке с предварительным информированием Пользователей. Оплаченный по действующим ценам период не изменяется.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">4. Порядок оплаты и активации</h4>
+      <p>4.1. Оплата производится через платёжный сервис ЮKassa (банковские карты, СБП, кошелёк ЮMoney) либо иными способами, указанными на сайте.</p>
+      <p class="mt-2">4.2. Датой акцепта оферты считается дата поступления денежных средств на счёт Исполнителя.</p>
+      <p class="mt-2">4.3. Доступ к тарифу Premium активируется автоматически после поступления оплаты в течение нескольких минут. Срок действия отсчитывается с момента активации.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">5. Права и обязанности сторон</h4>
+      <p>5.1. Исполнитель обязуется обеспечить работу сервиса, за исключением перерывов на техническое обслуживание и случаев, не зависящих от Исполнителя.</p>
+      <p class="mt-2">5.2. Пользователь обязуется использовать сервис правомерно и не нарушать права третьих лиц.</p>
+      <p class="mt-2">5.3. Пользователь несёт ответственность за сохранность учётных данных своего аккаунта.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">6. Персональные данные</h4>
+      <p>6.1. Персональные данные (email) обрабатываются для предоставления услуг. Оплата обрабатывается платёжным сервисом ЮKassa в соответствии с его правилами.</p>
+      <p class="mt-2">6.2. Совершая акцепт оферты, Пользователь соглашается с обработкой своих персональных данных.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">7. Возврат средств</h4>
+      <p>7.1. Если услуга не была оказана или оказана ненадлежащим образом, Пользователь вправе направить Исполнителю требование о возврате средств на email <span class="text-[var(--text-primary)] font-medium">${SELLER.email}</span>. Возврат производится в течение 10 (десяти) рабочих дней.</p>
+      <p class="mt-2">7.2. Поскольку услуга считается оказанной в момент активации доступа, возврат после фактического оказания услуги не производится, кроме случаев, предусмотренных действующим законодательством РФ.</p>
+
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">8. Реквизиты Исполнителя</h4>
+      <p>Исполнитель: ${SELLER.name}, ИНН ${SELLER.inn} (самозанятый, НПД). Контакты: ${SELLER.email}, ${SELLER.phone}, Telegram ${SELLER.tg}.`
+  },
+  how: {
+    title: 'Как это работает',
+    html: `
+      <div class="flex flex-col gap-4">
+        <div class="flex gap-3">
+          <span class="shrink-0 w-7 h-7 rounded-full bg-accent/15 text-accent text-xs font-bold flex items-center justify-center">1</span>
+          <div>
+            <p class="text-[13px] font-semibold text-[var(--text-primary)]">Добавьте подписки</p>
+            <p class="text-xs mt-0.5">Укажите сервисы (Яндекс Плюс, Иви, Telegram Premium и др.), суммы и даты списаний — сайт посчитает расходы в месяц и в год. При вводе названия появятся подсказки с ценами.</p>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <span class="shrink-0 w-7 h-7 rounded-full bg-accent/15 text-accent text-xs font-bold flex items-center justify-center">2</span>
+          <div>
+            <p class="text-[13px] font-semibold text-[var(--text-primary)]">Получайте напоминания</p>
+            <p class="text-xs mt-0.5">Бот SubPing в Telegram заранее напомнит о списаниях — за 1, 3 или 7 дней (Premium).</p>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <span class="shrink-0 w-7 h-7 rounded-full bg-accent/15 text-accent text-xs font-bold flex items-center justify-center">3</span>
+          <div>
+            <p class="text-[13px] font-semibold text-[var(--text-primary)]">Экономьте на ненужном</p>
+            <p class="text-xs mt-0.5">Аналитика покажет, куда уходят деньги. Отменяйте подписки, которыми не пользуетесь.</p>
+          </div>
+        </div>
+        <p class="text-[11px] text-[var(--text-muted)]">Бесплатно до 3 подписок. Premium — 15 ₽/мес: безлимит, аналитика и Telegram-напоминания.</p>
+      </div>`
+  },
+  delivery: {
+    title: 'Оплата и получение услуги',
+    html: `
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mb-1.5">Способы оплаты</h4>
+      <p>Оплата производится через платёжный сервис ЮKassa: банковские карты (Мир, Visa, Mastercard), СБП и кошелёк ЮMoney. После оплаты вы получите электронный чек на указанный email.</p>
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">Стоимость</h4>
+      <p>Тариф Premium — <b class="text-[var(--text-primary)]">15 ₽ в месяц</b>. Бесплатный тариф — 0 ₽ (до 3 подписок).</p>
+      <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">Порядок получения услуги</h4>
+      <p>Услуга цифровая и оказывается дистанционно. Физическая доставка не требуется: после поступления оплаты Premium автоматически активируется на вашем аккаунте в течение нескольких минут — доступ открывается в личном кабинете.</p>
+      <p class="mt-2">Если активация не произошла автоматически в течение часа, напишите на <a href="mailto:${SELLER.email}" class="text-accent-400 underline">${SELLER.email}</a> — активируем вручную.</p>`
+  },
+  pricing: {
+    title: 'Тарифы',
+    html: `
+      <div class="flex flex-col gap-3">
+        <div class="border border-border rounded-2xl p-4">
+          <div class="flex items-center justify-between gap-3 mb-1.5">
+            <p class="text-sm font-semibold text-[var(--text-primary)]">Бесплатный</p>
+            <span class="text-sm font-bold text-[var(--text-secondary)]">0 ₽</span>
+          </div>
+          <ul class="text-xs flex flex-col gap-1.5">
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>До 3 подписок</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Итоговая сумма в месяц и в год</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Напоминания о списаниях на сайте</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Экспорт данных в JSON</li>
+          </ul>
+        </div>
+        <div class="border border-accent/40 bg-accent/5 rounded-2xl p-4">
+          <div class="flex items-center justify-between gap-3 mb-1.5">
+            <p class="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-1.5">Premium
+              <span class="text-[10px] font-bold uppercase tracking-wide bg-accent/15 text-accent px-1.5 py-0.5 rounded-full">популярный</span>
+            </p>
+            <span class="text-sm font-bold text-[var(--text-primary)]">15 ₽<span class="text-[10px] font-normal text-[var(--text-muted)]">/мес</span></span>
+          </div>
+          <ul class="text-xs flex flex-col gap-1.5">
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Неограниченное число подписок</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Аналитика расходов по категориям</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Ближайшие списания</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Telegram-напоминания за 1 / 3 / 7 дней</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Экспорт в CSV</li>
+          </ul>
+        </div>
+        <p class="text-[11px] text-[var(--text-muted)]">Оплата через ЮKassa (карты, СБП, ЮMoney). Услуга активируется автоматически после оплаты. <a href="offer.html" class="text-accent-400 underline">Публичная оферта</a>.</p>
+      </div>`
+  },
+  requisites: {
+    title: 'Реквизиты',
+    html: `
+      <div class="flex flex-col">
+        <div class="flex items-center justify-between gap-3 border-b border-border py-2.5"><span class="shrink-0 text-[var(--text-muted)]">Исполнитель</span><span class="text-[var(--text-primary)] font-medium text-right">${SELLER.name}</span></div>
+        <div class="flex items-center justify-between gap-3 border-b border-border py-2.5"><span class="shrink-0 text-[var(--text-muted)]">ИНН</span><span class="text-[var(--text-primary)] font-medium">${SELLER.inn}</span></div>
+        <div class="flex items-center justify-between gap-3 border-b border-border py-2.5"><span class="shrink-0 text-[var(--text-muted)]">Статус</span><span class="text-[var(--text-primary)] font-medium text-right">Самозанятый (НПД)</span></div>
+        <div class="flex items-center justify-between gap-3 border-b border-border py-2.5"><span class="shrink-0 text-[var(--text-muted)]">Email</span><a href="mailto:${SELLER.email}" class="text-[var(--text-primary)] font-medium text-accent-400">${SELLER.email}</a></div>
+        <div class="flex items-center justify-between gap-3 border-b border-border py-2.5"><span class="shrink-0 text-[var(--text-muted)]">Телефон</span><span class="text-[var(--text-primary)] font-medium">${SELLER.phone}</span></div>
+        <div class="flex items-center justify-between gap-3 border-b border-border py-2.5"><span class="shrink-0 text-[var(--text-muted)]">Telegram</span><span class="text-[var(--text-primary)] font-medium">${SELLER.tg}</span></div>
+        <div class="flex items-center justify-between gap-3 py-2.5"><span class="shrink-0 text-[var(--text-muted)]">Сайт</span><a href="${SELLER.domain}" target="_blank" rel="noopener" class="text-[var(--text-primary)] font-medium text-accent-400 text-right">${SELLER.domain}</a></div>
+      </div>`
+  },
+  contacts: {
+    title: 'Контакты',
+    html: `
+      <p>По вопросам оплаты, работы сервиса и возврата средств обращайтесь:</p>
+      <div class="flex flex-col gap-2 mt-3">
+        <div class="flex items-center justify-between gap-3 border-b border-border pb-2"><span class="text-[var(--text-muted)]">Email</span><a href="mailto:${SELLER.email}" class="text-accent-400">${SELLER.email}</a></div>
+        <div class="flex items-center justify-between gap-3 border-b border-border pb-2"><span class="text-[var(--text-muted)]">Telegram</span><span class="text-[var(--text-primary)] font-medium">${SELLER.tg}</span></div>
+        <div class="flex items-center justify-between gap-3"><span class="text-[var(--text-muted)]">Телефон</span><span class="text-[var(--text-primary)] font-medium">${SELLER.phone}</span></div>
+      </div>
+      <p class="mt-4 text-xs">Среднее время ответа — до 24 часов.</p>`
+  }
+};
+
+class App {
+  static TOKEN_KEY = 'subtrack_token';
+  static BASE_KEY = 'subtrack_api_base';
+  static FREE_LIMIT = 3;
+  static CURRENCY_SYMBOL = { RUB: '₽', USD: '$', EUR: '€' };
+
+  static POPULAR = [
+    { name: 'Яндекс Плюс', category: 'Развлечения', amount: 299 },
+    { name: 'Иви', category: 'Развлечения', amount: 399 },
+    { name: 'Okko', category: 'Развлечения', amount: 399 },
+    { name: 'START', category: 'Развлечения', amount: 299 },
+    { name: 'Premier', category: 'Развлечения', amount: 399 },
+    { name: 'Wink', category: 'Развлечения', amount: 349 },
+    { name: 'VK Музыка', category: 'Развлечения', amount: 169 },
+    { name: 'СберЗвук', category: 'Развлечения', amount: 199 },
+    { name: 'GFN.RU', category: 'Развлечения', amount: 499 },
+    { name: 'VK Play Cloud', category: 'Развлечения', amount: 299 },
+    { name: 'Литрес', category: 'Образование', amount: 549 },
+    { name: 'Stepik', category: 'Образование', amount: 499 },
+    { name: 'OZON Premium', category: 'Другое', amount: 299 },
+    { name: 'СберПрайм', category: 'Утилиты', amount: 299 },
+    { name: 'Тинькофф Про', category: 'Утилиты', amount: 299 },
+    { name: 'Сбер', category: 'Утилиты', amount: 99 },
+    { name: 'Telegram Premium', category: 'Утилиты', amount: 349 },
+    { name: 'Яндекс 360', category: 'Работа', amount: 299 },
+    { name: 'ChatGPT Plus', category: 'Работа', amount: 1999 },
+    { name: 'МТС', category: 'Мобильная связь', amount: 400 },
+    { name: 'Билайн', category: 'Мобильная связь', amount: 350 },
+    { name: 'Мегафон', category: 'Мобильная связь', amount: 400 },
+    { name: 'Теле2', category: 'Мобильная связь', amount: 300 },
+    { name: 'Yota', category: 'Мобильная связь', amount: 300 },
+    { name: 'МТС ТВ', category: 'Развлечения', amount: 249 },
+    { name: 'Ростелеком', category: 'Мобильная связь', amount: 250 },
+    { name: 'ЯндексUSIC', category: 'Развлечения', amount: 199 },
+    { name: 'Spotify', category: 'Развлечения', amount: 299 },
+    { name: 'Netflix', category: 'Развлечения', amount: 599 },
+    { name: 'Apple Music', category: 'Развлечения', amount: 199 },
+    { name: 'Spotify Family', category: 'Развлечения', amount: 549 },
+    { name: 'Яндекс Плюс Family', category: 'Развлечения', amount: 399 },
+    { name: 'Duolingo', category: 'Образование', amount: 399 },
+    { name: 'IVI Premium', category: 'Развлечения', amount: 399 },
+    { name: 'Кинопоиск', category: 'Развлечения', amount: 399 }
+  ];
+
+  constructor() {
+    this.state = {
+      token: localStorage.getItem(App.TOKEN_KEY) || null,
+      user: null,
+      view: 'dashboard',
+      authMode: 'login',
+      editingSubId: null,
+      paymentId: null,
+      paymentManual: false,
+      subs: [],
+      payTimer: null,
+      dashTab: 'analytics',
+      calMonth: new Date().getMonth(),
+      calYear: new Date().getFullYear()
+    };
+    this.apiBase = null;
+    this.badBases = new Set();
+  }
+
+  /* ---------------------------- Инициализация ---------------------------- */
+  async init() {
+    this.cacheDom();
+    this.bindEvents();
+    this.setAuthMode('login');
+    await loadTunnelBase();
+    if (this.state.token) {
+      this.loadMe()
+        .then(() => this.switchView('dashboard'))
+        .catch(() => { this.state.token = null; localStorage.removeItem(App.TOKEN_KEY); this.startDemo(); });
+    } else {
+      this.startDemo();
+    }
+  }
+
+  async resolveApiBase() {
+    if (this.apiBase && !this.badBases.has(this.apiBase)) return this.apiBase;
+    const cached = localStorage.getItem(App.BASE_KEY);
+    if (cached && API_BASES.includes(cached) && !this.badBases.has(cached)) {
+      this.apiBase = cached;
+      return cached;
+    }
+    for (const base of API_BASES) {
+      if (this.badBases.has(base)) continue;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      try {
+        const r = await fetch(base + '/api/me', { signal: controller.signal });
+        clearTimeout(timer);
+        if (r.status === 401 || r.ok) {
+          this.apiBase = base;
+          try { localStorage.setItem(App.BASE_KEY, base); } catch (e) {}
+          return base;
+        }
+      } catch (e) {
+        clearTimeout(timer);
+      }
+    }
+    return API_BASES[0];
+  }
+
+  invalidateBase(base) {
+    this.badBases.add(base);
+    if (this.apiBase === base) this.apiBase = null;
+    try { localStorage.removeItem(App.BASE_KEY); } catch (e) {}
+  }
+
+  async fetchWithRetry(path, options) {
+    const attempts = options._noRetry ? 1 : 2;
+    let lastErr;
+    for (let i = 0; i < attempts; i++) {
+      const base = await this.resolveApiBase();
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 35000);
+      try {
+        const resp = await fetch(base + path, { ...options, signal: controller.signal });
+        clearTimeout(timer);
+        return resp;
+      } catch (e) {
+        clearTimeout(timer);
+        lastErr = e;
+        this.invalidateBase(base);
+        if (i < attempts - 1) await new Promise(r => setTimeout(r, 800));
+      }
+    }
+    if (lastErr.name === 'AbortError') throw new Error('Сервер не отвечает. Проверьте интернет и попробуйте ещё раз');
+    throw new Error('Нет связи с сервером. Проверьте интернет-соединение');
+  }
+
+  async api(path, options = {}) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (this.state.token) headers['Authorization'] = 'Bearer ' + this.state.token;
+    const { _noRetry, ...rest } = options;
+    const resp = await this.fetchWithRetry(path, { ...rest, headers, _noRetry });
+    let data = {};
+    try { data = await resp.json(); } catch (e) {}
+    if (resp.status === 401) {
+      this.clearSession();
+      window.location.href = 'index.html';
+      throw new Error('Сессия истекла');
+    }
+    if (!resp.ok) {
+      const detail = typeof data.detail === 'string' ? data.detail : 'Ошибка запроса';
+      throw new Error(detail);
+    }
+    return data;
+  }
+
+  async loadMe() {
+    const me = await this.api('/api/me');
+    this.state.user = me;
+    this.state.subs = me.subscriptions || [];
+    return me;
+  }
+
+  cacheDom() {
+    this.el = {
+      views: document.querySelectorAll('[data-view]'),
+      authForm: document.getElementById('auth-form'),
+      demoBtn: document.getElementById('demo-btn'),
+      authEmail: document.getElementById('auth-email'),
+      authPassword: document.getElementById('auth-password'),
+      authError: document.getElementById('auth-error'),
+      authSubmit: document.getElementById('auth-submit'),
+      authTabs: document.querySelectorAll('[data-auth-tab]'),
+      consentRow: document.getElementById('consent-row'),
+      authConsent: document.getElementById('auth-consent'),
+
+      premiumBadge: document.getElementById('premium-badge'),
+      summaryMonthly: document.getElementById('summary-monthly'),
+      summaryYearly: document.getElementById('summary-yearly'),
+      subCount: document.getElementById('sub-count'),
+      subsList: document.getElementById('subscriptions-list'),
+      emptyState: document.getElementById('empty-state'),
+      limitBanner: document.getElementById('limit-banner'),
+      digestSection: document.getElementById('digest-section'),
+      dashTabs: document.getElementById('dash-tabs'),
+      dashTabAnalytics: document.getElementById('dash-tab-analytics'),
+      dashTabCalendar: document.getElementById('dash-tab-calendar'),
+      dashTabInsights: document.getElementById('dash-tab-insights'),
+      dashTabGoals: document.getElementById('dash-tab-goals'),
+
+      settingsEmail: document.getElementById('settings-email'),
+      premiumCard: document.getElementById('premium-card'),
+      tgInput: document.getElementById('tg-chat-id'),
+      tgSave: document.getElementById('tg-save'),
+      tgConnect: document.getElementById('tg-connect'),
+      tgHint: document.getElementById('tg-hint'),
+      paymentsCard: document.getElementById('payments-card'),
+      paymentsList: document.getElementById('payments-list'),
+
+      subModal: document.getElementById('subscription-modal'),
+      subModalTitle: document.getElementById('sub-modal-title'),
+      subForm: document.getElementById('sub-form'),
+      subId: document.getElementById('sub-id'),
+      popularBox: document.getElementById('popular-box'),
+      popularGrid: document.getElementById('popular-grid'),
+      subName: document.getElementById('sub-name'),
+      subSuggest: document.getElementById('sub-suggest'),
+      subAmount: document.getElementById('sub-amount'),
+      subCurrency: document.getElementById('sub-currency'),
+      subPeriod: document.getElementById('sub-period'),
+      subCategory: document.getElementById('sub-category'),
+      subDate: document.getElementById('sub-date'),
+      subError: document.getElementById('sub-error'),
+      subDelete: document.getElementById('sub-delete'),
+
+      paymentModal: document.getElementById('payment-modal'),
+      paymentModalBody: document.getElementById('payment-modal-body'),
+
+      docModal: document.getElementById('doc-modal'),
+      docTitle: document.getElementById('doc-modal-title'),
+      docBody: document.getElementById('doc-modal-body'),
+
+      toastContainer: document.getElementById('toast-container')
+    };
+  }
+
+  bindEvents() {
+    this.el.authTabs.forEach(tab => {
+      tab.addEventListener('click', () => this.setAuthMode(tab.dataset.authTab));
+    });
+    this.el.authForm.addEventListener('submit', e => this.handleAuthSubmit(e));
+    document.getElementById('auth-modal-close')?.addEventListener('click', () => this.closeAuthModal());
+    document.getElementById('auth-modal')?.addEventListener('click', e => { if (e.target.id === 'auth-modal') this.closeAuthModal(); });
+    if (this.el.demoBtn) this.el.demoBtn.addEventListener('click', () => this.startDemo());
+    const headerLoginBtn = document.getElementById('header-login-btn');
+    if (headerLoginBtn) headerLoginBtn.addEventListener('click', () => { this.clearSession(); this.startDemo(); this.openAuthModal(); });
+    const settingsLoginBtn = document.getElementById('settings-login-btn');
+    if (settingsLoginBtn) settingsLoginBtn.addEventListener('click', () => { this.clearSession(); this.startDemo(); this.openAuthModal(); });
+
+    document.querySelectorAll('[data-dash-tab]').forEach(btn => {
+      btn.addEventListener('click', () => this.switchDashTab(btn.dataset.dashTab));
+    });
+
+    document.querySelectorAll('[data-nav]').forEach(btn => {
+      btn.addEventListener('click', () => this.switchView(btn.dataset.nav));
+    });
+
+    document.querySelectorAll('[data-action="open-add"]').forEach(btn => {
+      btn.addEventListener('click', () => this.openSubModal());
+    });
+    document.getElementById('subscription-modal').addEventListener('click', e => {
+      if (e.target.id === 'subscription-modal' || e.target.closest('[data-action="close-sub-modal"]')) this.closeSubModal();
+    });
+    this.el.subForm.addEventListener('submit', e => this.handleSubSubmit(e));
+    this.el.subDelete.addEventListener('click', () => this.deleteSubscription(this.state.editingSubId));
+    this.el.subName.addEventListener('input', () => this.renderSuggestions(this.el.subName.value.trim()));
+    this.el.subName.addEventListener('focus', () => this.renderSuggestions(this.el.subName.value.trim()));
+    document.addEventListener('click', e => {
+      if (!this.el.subName.contains(e.target) && !this.el.subSuggest.contains(e.target)) this.hideSuggestions();
+    });
+
+    document.querySelector('[data-action="logout"]').addEventListener('click', () => this.logout());
+    document.querySelector('[data-action="export-json"]').addEventListener('click', () => this.exportJSON());
+    this.el.tgSave.addEventListener('click', () => this.saveTelegram());
+    this.el.tgConnect.addEventListener('click', () => this.connectTelegram());
+    document.querySelectorAll('[data-theme-toggle]').forEach(btn => btn.addEventListener('click', () => this.toggleTheme()));
+    document.querySelectorAll('a[href*=".html"]').forEach(a => a.addEventListener('click', () => this.forwardTheme(a)));
+
+    this.el.paymentModal.addEventListener('click', e => {
+      if (e.target.id === 'payment-modal' || e.target.closest('[data-action="close-payment"]')) this.closePaymentModal();
+    });
+
+    document.querySelectorAll('[data-doc]').forEach(btn => {
+      btn.addEventListener('click', () => this.openDoc(btn.dataset.doc));
+    });
+    this.el.docModal.addEventListener('click', e => {
+      if (e.target.id === 'doc-modal' || e.target.closest('[data-action="close-doc"]')) this.closeDoc();
+      const docBtn = e.target.closest('[data-doc]');
+      if (docBtn) this.openDoc(docBtn.dataset.doc);
+    });
+
+    document.getElementById('share-close')?.addEventListener('click', () => {
+      document.getElementById('share-modal').classList.add('hidden');
+      document.getElementById('share-modal').classList.remove('flex');
+    });
+    document.getElementById('share-copy')?.addEventListener('click', () => {
+      const amt = document.getElementById('share-amount').textContent;
+      const text = 'Я сэкономил ' + amt + ' ₽ на подписках благодаря SubPing! 🚀\n\nsubping.ru — трекер подписок, который напоминает о списаниях и помогает не платить лишнего.';
+      navigator.clipboard.writeText(text).then(() => this.toast('Текст скопирован!', 'success')).catch(() => this.toast('Не удалось скопировать', 'warning'));
+      document.getElementById('share-modal').classList.add('hidden');
+      document.getElementById('share-modal').classList.remove('flex');
+    });
+
+    if (!localStorage.getItem('subping_exit_seen')) {
+      let exitShown = false;
+      document.addEventListener('mouseout', e => {
+        if (exitShown) return;
+        if (e.clientY < 5 && !this.state.token) {
+          exitShown = true;
+          const popup = document.getElementById('exit-popup');
+          if (popup) { popup.classList.remove('hidden'); popup.classList.add('flex'); }
+        }
+      });
+      document.getElementById('exit-popup-close')?.addEventListener('click', () => { document.getElementById('exit-popup').classList.add('hidden'); document.getElementById('exit-popup').classList.remove('flex'); localStorage.setItem('subping_exit_seen', '1'); });
+      document.getElementById('exit-popup-later')?.addEventListener('click', () => { document.getElementById('exit-popup').classList.add('hidden'); document.getElementById('exit-popup').classList.remove('flex'); localStorage.setItem('subping_exit_seen', '1'); });
+      document.getElementById('exit-popup-submit')?.addEventListener('click', () => {
+        const email = document.getElementById('exit-popup-email')?.value;
+        if (email) { this.toast('Спасибо! Чек-лист отправлен на ' + email, 'success'); }
+        document.getElementById('exit-popup').classList.add('hidden');
+        document.getElementById('exit-popup').classList.remove('flex');
+        localStorage.setItem('subping_exit_seen', '1');
+      });
+    }
+  }
+
+  /* --------------------------------- Роутинг -------------------------------- */
+  switchView(name) {
+    this.state.view = name;
+    this.el.views.forEach(section => {
+      section.classList.toggle('hidden', section.dataset.view !== name);
+    });
+    if (name === 'dashboard') this.renderDashboard();
+    if (name === 'settings') this.renderSettings();
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------------------------------- Auth ---------------------------------- */
+  setAuthMode(mode) {
+    this.state.authMode = mode;
+    this.el.authTabs.forEach(t => {
+      const active = t.dataset.authTab === mode;
+      t.classList.toggle('bg-accent', active);
+      t.classList.toggle('text-white', active);
+      t.classList.toggle('text-[var(--text-secondary)]', !active);
+    });
+    this.el.authSubmit.textContent = mode === 'login' ? 'Войти' : 'Создать аккаунт';
+    this.el.consentRow.classList.toggle('hidden', mode !== 'register');
+    this.el.consentRow.classList.toggle('flex', mode === 'register');
+    this.hideAuthError();
+  }
+
+  hideAuthError() { this.el.authError.classList.add('hidden'); }
+  showAuthError(msg) { this.el.authError.textContent = msg; this.el.authError.classList.remove('hidden'); }
+
+  openAuthModal(mode) {
+    if (mode) this.setAuthMode(mode);
+    const m = document.getElementById('auth-modal');
+    if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
+  }
+  closeAuthModal() {
+    const m = document.getElementById('auth-modal');
+    if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
+  }
+
+  async handleAuthSubmit(e) {
+    e.preventDefault();
+    const email = this.el.authEmail.value.trim().toLowerCase();
+    const password = this.el.authPassword.value;
+    if (!email || !password || password.length < 4) {
+      this.showAuthError('Введите email и пароль (минимум 4 символа)');
+      return;
+    }
+    if (this.state.authMode === 'register' && !this.el.authConsent.checked) {
+      this.showAuthError('Подтвердите согласие с офертой и политикой конфиденциальности');
+      return;
+    }
+    this.el.authSubmit.disabled = true;
+    this.el.authSubmit.textContent = '…';
+    try {
+      const path = this.state.authMode === 'register' ? '/api/auth/register' : '/api/auth/login';
+      const res = await this.api(path, { method: 'POST', body: JSON.stringify({ email, password }), _noRetry: path.includes('/register') });
+      this.state.token = res.token;
+      localStorage.setItem(App.TOKEN_KEY, res.token);
+      this.state.demo = false;
+      await this.loadMe();
+      this.el.authForm.reset();
+      this.closeAuthModal();
+      this.switchView('dashboard');
+      this.toast(this.state.authMode === 'register' ? 'Аккаунт создан. Добро пожаловать!' : 'С возвращением!', 'success');
+    } catch (err) {
+      this.showAuthError(err.message);
+    } finally {
+      this.el.authSubmit.disabled = false;
+      this.el.authSubmit.textContent = this.state.authMode === 'login' ? 'Войти' : 'Создать аккаунт';
+    }
+  }
+
+  clearSession() {
+    this.state.token = null;
+    this.state.user = null;
+    this.state.subs = [];
+    this.state.demo = false;
+    localStorage.removeItem(App.TOKEN_KEY);
+    localStorage.removeItem('subping_demo');
+    localStorage.removeItem('subping_demo_subs');
+  }
+
+  startDemo() {
+    this.state.demo = true;
+    this.state.token = null;
+    localStorage.setItem('subping_demo', '1');
+    let demoSubs = [];
+    try { demoSubs = JSON.parse(localStorage.getItem('subping_demo_subs') || '[]'); } catch (e) {}
+    if (!demoSubs.length) {
+      const today = new Date();
+      const fmt = d => d.toISOString().slice(0, 10);
+      const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+      demoSubs = [
+        { id: 'demo_1', name: 'Яндекс Плюс', amount: 299, currency: 'RUB', period: 'monthly', category: 'Развлечения', next_date: fmt(addDays(today, 5)), last_notify: '' },
+        { id: 'demo_2', name: 'Иви', amount: 399, currency: 'RUB', period: 'monthly', category: 'Развлечения', next_date: fmt(addDays(today, 12)), last_notify: '' },
+        { id: 'demo_3', name: 'Telegram Premium', amount: 349, currency: 'RUB', period: 'monthly', category: 'Утилиты', next_date: fmt(addDays(today, 20)), last_notify: '' },
+      ];
+      localStorage.setItem('subping_demo_subs', JSON.stringify(demoSubs));
+    }
+    this.state.subs = demoSubs;
+    this.state.user = { email: 'demo@subping.ru', premium: false, premium_until: null, telegram_chat_id: null, reminder_days: 3, subscriptions: demoSubs };
+    this.switchView('dashboard');
+    this.toast('Демо-режим — данные сохраняются на этом устройстве', 'info');
+  }
+
+  demoSaveSubs() {
+    localStorage.setItem('subping_demo_subs', JSON.stringify(this.state.subs));
+  }
+
+  showLimitModal() {
+    const modal = document.createElement('div');
+    modal.id = 'limit-modal';
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4';
+    modal.innerHTML = `
+      <div class="bg-surface border border-border rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center relative">
+        <button type="button" class="limit-close absolute top-3 right-3 w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center hover:bg-accent/20 transition-colors" aria-label="Закрыть">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#9497a8" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <div class="w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center mx-auto mb-4">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z" stroke="#818cf8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3 class="text-lg font-bold mb-2">Лимит демо-режима</h3>
+        <p class="text-sm text-[var(--text-secondary)] mb-5">Вы добавили 3 подписки — максимум для пробного периода. Создайте аккаунт, чтобы добавить ещё и сохранить данные.</p>
+        <button type="button" class="limit-register w-full bg-accent hover:bg-accent-hover text-white font-semibold py-2.5 rounded-xl transition-colors mb-2">Создать аккаунт</button>
+        <button type="button" class="limit-close w-full bg-surface-2 hover:bg-surface text-[var(--text-secondary)] text-sm font-medium py-2.5 rounded-xl transition-colors">Потом</button>
+      </div>`;
+    document.body.appendChild(modal);
+    const close = () => modal.remove();
+    modal.querySelectorAll('.limit-close').forEach(btn => btn.addEventListener('click', close));
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+    modal.querySelector('.limit-register')?.addEventListener('click', () => { close(); this.clearSession(); this.startDemo(); this.openAuthModal('register'); });
+  }
+
+  async logout() {
+    try { await this.api('/api/auth/logout', { method: 'POST', body: '{}' }); } catch (e) {}
+    this.clearSession();
+    window.location.href = 'index.html';
+  }
+
+  /* ------------------------------- Подписки CRUD ------------------------------ */
+  async openSubModal(subId = null) {
+    const user = this.state.user;
+    if (!subId && !user.premium && user.subscriptions.length >= App.FREE_LIMIT) {
+      if (this.state.demo) {
+        this.showLimitModal();
+      } else {
+        this.switchView('settings');
+        this.toast('Достигнут лимит бесплатного тарифа (3 подписки)', 'warning');
+      }
+      return;
+    }
+    this.state.editingSubId = subId;
+    this.el.subForm.reset();
+    this.el.subError.classList.add('hidden');
+
+    if (subId) {
+      const sub = user.subscriptions.find(s => s.id === subId);
+      this.el.subModalTitle.textContent = 'Редактировать подписку';
+      this.el.subId.value = sub.id;
+      this.el.subName.value = sub.name;
+      this.el.subAmount.value = sub.amount;
+      this.el.subCurrency.value = sub.currency;
+      this.el.subPeriod.value = sub.period;
+      this.el.subCategory.value = sub.category;
+      this.el.subDate.value = sub.next_date;
+      this.el.subDelete.classList.remove('hidden');
+      this.el.popularBox.classList.add('hidden');
+      this.hideSuggestions();
+    } else {
+      this.el.subModalTitle.textContent = 'Новая подписка';
+      this.el.subId.value = '';
+      this.el.subDate.value = new Date().toISOString().slice(0, 10);
+      this.el.subDelete.classList.add('hidden');
+      this.el.popularBox.classList.remove('hidden');
+      this.renderPopularGrid();
+    }
+    this.el.subModal.classList.remove('hidden');
+    this.el.subModal.classList.add('flex');
+  }
+
+  renderPopularGrid() {
+    this.el.popularGrid.innerHTML = App.POPULAR.map(t =>
+      `<button type="button" data-popular="${this.escapeHtml(t.name)}" class="text-[11px] font-medium bg-surface-2 border border-border rounded-full px-2.5 py-1.5 hover:border-accent/60 hover:text-accent-400 transition-colors">${this.escapeHtml(t.name)}</button>`
+    ).join('');
+    this.el.popularGrid.querySelectorAll('[data-popular]').forEach(btn => {
+      btn.addEventListener('click', () => this.selectPopular(btn.dataset.popular));
+    });
+  }
+
+  selectPopular(name) {
+    const t = App.POPULAR.find(x => x.name === name);
+    if (!t) return;
+    this.el.subName.value = t.name;
+    this.el.subAmount.value = t.amount;
+    this.el.subCurrency.value = t.currency || 'RUB';
+    this.el.subPeriod.value = t.period || 'monthly';
+    this.el.subCategory.value = t.category;
+    this.el.subError.classList.add('hidden');
+    this.el.subName.focus();
+  }
+
+  renderSuggestions(query) {
+    if (!query) { this.hideSuggestions(); return; }
+    const q = query.toLowerCase();
+    const items = App.POPULAR.filter(t => t.name.toLowerCase().includes(q)).slice(0, 6);
+    if (!items.length) { this.hideSuggestions(); return; }
+    this.el.subSuggest.innerHTML = items.map(t => `
+      <button type="button" data-suggest="${this.escapeHtml(t.name)}" class="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-left hover:bg-surface-2 transition-colors">
+        <span class="text-sm font-medium truncate">${this.escapeHtml(t.name)}</span>
+        <span class="shrink-0 text-xs text-[var(--text-muted)]">${this.formatNumber(t.amount)} ₽ · ${this.escapeHtml(t.category)}</span>
+      </button>`).join('');
+    this.el.subSuggest.classList.remove('hidden');
+    this.el.subSuggest.querySelectorAll('[data-suggest]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.selectPopular(btn.dataset.suggest);
+        this.hideSuggestions();
+      });
+    });
+  }
+
+  hideSuggestions() {
+    if (this.el.subSuggest) this.el.subSuggest.classList.add('hidden');
+  }
+
+  closeSubModal() {
+    this.el.subModal.classList.add('hidden');
+    this.el.subModal.classList.remove('flex');
+    this.state.editingSubId = null;
+    this.hideSuggestions();
+  }
+
+  async handleSubSubmit(e) {
+    e.preventDefault();
+    const name = this.el.subName.value.trim();
+    const amount = parseFloat(this.el.subAmount.value);
+    const date = this.el.subDate.value;
+    if (!name || !amount || amount <= 0 || !date) {
+      this.el.subError.textContent = 'Заполните все поля корректно';
+      this.el.subError.classList.remove('hidden');
+      return;
+    }
+    const payload = {
+      name,
+      amount,
+      currency: this.el.subCurrency.value,
+      period: this.el.subPeriod.value,
+      category: this.el.subCategory.value,
+      next_date: date
+    };
+    const id = this.el.subId.value;
+    try {
+      if (this.state.demo) {
+        if (id) {
+          const idx = this.state.subs.findIndex(s => s.id === id);
+          if (idx >= 0) Object.assign(this.state.subs[idx], payload);
+          this.toast('Подписка обновлена', 'success');
+        } else {
+          if (!this.state.user.premium && this.state.subs.length >= App.FREE_LIMIT) {
+            this.toast('Бесплатный лимит — 3 подписки. Оформите Premium!', 'warning');
+            return;
+          }
+          payload.id = 'demo_' + Date.now();
+          payload.last_notify = '';
+          this.state.subs.push(payload);
+          this.toast('Подписка добавлена', 'success');
+        }
+        this.demoSaveSubs();
+        this.state.user.subscriptions = this.state.subs;
+        this.closeSubModal();
+        this.renderDashboard();
+      } else {
+        if (id) {
+          await this.api('/api/subscriptions/' + id, { method: 'PUT', body: JSON.stringify(payload) });
+          this.toast('Подписка обновлена', 'success');
+        } else {
+          await this.api('/api/subscriptions', { method: 'POST', body: JSON.stringify(payload) });
+          this.toast('Подписка добавлена', 'success');
+        }
+        this.closeSubModal();
+        await this.loadMe();
+        this.renderDashboard();
+      }
+    } catch (err) {
+      this.el.subError.textContent = err.message;
+      this.el.subError.classList.remove('hidden');
+    }
+  }
+
+  async deleteSubscription(id) {
+    if (!id) return;
+    if (!confirm('Удалить эту подписку?')) return;
+    const sub = this.state.subs.find(s => s.id === id);
+    const monthlyEquiv = sub ? (sub.period === 'yearly' ? sub.amount / 12 : sub.period === 'weekly' ? sub.amount * 4.33 : sub.amount) : 0;
+    try {
+      if (this.state.demo) {
+        this.state.subs = this.state.subs.filter(s => s.id !== id);
+        this.demoSaveSubs();
+        this.state.user.subscriptions = this.state.subs;
+        this.closeSubModal();
+        this.renderDashboard();
+      } else {
+        await this.api('/api/subscriptions/' + id, { method: 'DELETE' });
+        this.closeSubModal();
+        await this.loadMe();
+        this.renderDashboard();
+      }
+      if (sub && monthlyEquiv > 0) {
+        this._addSavingsEntry(monthlyEquiv, 'Удалена «' + sub.name + '»');
+        this.toast('Удалено · +' + this.formatNumber(monthlyEquiv) + ' ₽/мес в накоплениях', 'success');
+      } else {
+        this.toast('Подписка удалена', 'info');
+      }
+    } catch (err) {
+      this.toast(err.message, 'warning');
+    }
+  }
+
+  /* -------------------------------- Расчёты -------------------------------- */
+  daysUntil(dateStr) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const target = new Date(dateStr + 'T00:00:00');
+    return Math.round((target - today) / 86400000);
+  }
+
+  urgencyClasses(days) {
+    if (days < 3) return { dot: 'bg-[var(--danger)]', text: 'text-[var(--danger)]', bg: 'bg-[var(--danger)]/10' };
+    if (days <= 7) return { dot: 'bg-[var(--warning)]', text: 'text-[var(--warning)]', bg: 'bg-[var(--warning)]/10' };
+    return { dot: 'bg-[var(--success)]', text: 'text-[var(--success)]', bg: 'bg-[var(--success)]/10' };
+  }
+
+  formatDaysLabel(days) {
+    if (days < 0) return `Просрочено на ${Math.abs(days)} дн.`;
+    if (days === 0) return 'Сегодня';
+    if (days === 1) return 'Завтра';
+    return `Через ${days} дн.`;
+  }
+
+  computeTotals(subscriptions) {
+    const monthly = {}, yearly = {};
+    subscriptions.forEach(s => {
+      const m = s.period === 'yearly' ? s.amount / 12 : s.amount;
+      const y = s.period === 'yearly' ? s.amount : s.amount * 12;
+      monthly[s.currency] = (monthly[s.currency] || 0) + m;
+      yearly[s.currency] = (yearly[s.currency] || 0) + y;
+    });
+    return { monthly, yearly };
+  }
+
+  formatCurrencyMap(map) {
+    const entries = Object.entries(map).filter(([, v]) => v > 0.004);
+    if (!entries.length) return '0 ₽';
+    return entries.map(([cur, v]) => `${this.formatNumber(v)} ${App.CURRENCY_SYMBOL[cur] || cur}`).join(' + ');
+  }
+
+  formatNumber(n) {
+    return n % 1 === 0 ? n.toFixed(0) : n.toFixed(2);
+  }
+
+  /* -------------------------------- Рендеринг ------------------------------- */
+  renderDashboard() {
+    const user = this.state.user;
+    if (!user) return;
+
+    const headerLoginBtn = document.getElementById('header-login-btn');
+    if (headerLoginBtn) headerLoginBtn.classList.toggle('hidden', !this.state.demo);
+
+    if (!this.state.demo) {
+      document.getElementById('demo-banner')?.remove();
+    }
+
+    if (this.state.demo && !document.getElementById('demo-banner')) {
+      const banner = document.createElement('div');
+      banner.id = 'demo-banner';
+      banner.className = 'mx-auto max-w-3xl px-4 sm:px-6 mt-4';
+      banner.innerHTML = `
+        <div class="bg-gradient-to-r from-accent/10 to-accent/5 border border-accent/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-accent-400 mb-0.5">Это демо-данные</p>
+            <p class="text-xs text-[var(--text-secondary)]">Добавляйте и редактируйте подписки. Чтобы сохранить данные и получить напоминания в Telegram — создайте аккаунт.</p>
+          </div>
+          <div class="flex gap-2 shrink-0">
+            <button type="button" id="demo-register" class="text-xs font-semibold bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-xl transition-colors whitespace-nowrap">Создать аккаунт</button>
+          </div>
+        </div>`;
+      const dashboard = this.el.subsList?.closest('[data-view]');
+      if (dashboard) {
+        const contentWrapper = dashboard.querySelector(':scope > .max-w-3xl');
+        if (contentWrapper) dashboard.insertBefore(banner, contentWrapper);
+        else dashboard.prepend(banner);
+      }
+      banner.querySelector('#demo-register')?.addEventListener('click', () => { this.clearSession(); this.startDemo(); this.openAuthModal('register'); });
+    }
+
+    this.el.premiumBadge.classList.toggle('hidden', !user.premium);
+
+    const subs = [...this.state.subs].sort((a, b) => this.daysUntil(a.next_date) - this.daysUntil(b.next_date));
+
+    const weekBadge = document.getElementById('week-badge');
+    if (weekBadge) {
+      const now = new Date();
+      const endOfWeek = new Date(now);
+      endOfWeek.setDate(endOfWeek.getDate() + (7 - endOfWeek.getDay()));
+      const thisWeek = subs.filter(s => {
+        const d = new Date(s.next_date + 'T00:00:00');
+        return d >= now && d <= endOfWeek;
+      });
+      if (thisWeek.length > 0) {
+        const sum = thisWeek.reduce((a, s) => a + s.amount, 0);
+        weekBadge.textContent = thisWeek.length + ' спис. · ' + this.formatNumber(sum) + ' ₽';
+        weekBadge.classList.remove('hidden');
+      } else {
+        weekBadge.classList.add('hidden');
+      }
+    }
+    const totals = this.computeTotals(subs);
+    this.el.summaryMonthly.textContent = this.formatCurrencyMap(totals.monthly);
+    this.el.summaryYearly.textContent = this.formatCurrencyMap(totals.yearly);
+    this.el.subCount.textContent = subs.length ? `(${subs.length}${!user.premium ? '/' + App.FREE_LIMIT : ''})` : '';
+
+    this.el.emptyState.classList.toggle('hidden', subs.length !== 0);
+    this.el.emptyState.classList.toggle('flex', subs.length === 0);
+    this.el.limitBanner.classList.toggle('hidden', user.premium || subs.length < App.FREE_LIMIT);
+
+    const onb = document.getElementById('onboarding-checklist');
+    if (onb) {
+      const dismissed = localStorage.getItem('subping_onboard_done');
+      const hasTg = !!user.telegram_chat_id;
+      const isPremium = user.premium;
+      const hasSubs = subs.length > 0;
+      const allDone = hasSubs && hasTg && isPremium;
+      if (allDone || dismissed) {
+        onb.classList.add('hidden');
+      } else {
+        const steps = [
+          { done: hasSubs, label: 'Добавить первую подписку', icon: '📋' },
+          { done: hasTg, label: 'Подключить Telegram', icon: '🤖' },
+          { done: isPremium, label: 'Попробовать Premium', icon: '⭐' }
+        ];
+        const doneCount = steps.filter(s => s.done).length;
+        const pct = Math.round(doneCount / steps.length * 100);
+        onb.classList.remove('hidden');
+        onb.innerHTML = `
+          <div class="bg-gradient-to-r from-accent/5 to-surface border border-border rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-semibold text-[var(--text-secondary)]">Стартовый чеклист</p>
+              <button type="button" id="onb-dismiss" class="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)]">Скрыть</button>
+            </div>
+            <div class="w-full h-1.5 bg-surface-2 rounded-full overflow-hidden mb-3">
+              <div class="h-full bg-accent rounded-full transition-all" style="width:${pct}%"></div>
+            </div>
+            <div class="flex flex-col gap-2">
+              ${steps.map(s => `
+                <div class="flex items-center gap-2.5 ${s.done ? 'opacity-50' : ''}">
+                  <span class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-xs ${s.done ? 'bg-success/20 text-[var(--success)]' : 'bg-surface-2 text-[var(--text-muted)]'}">${s.done ? '&#10003;' : s.icon}</span>
+                  <span class="text-xs ${s.done ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-secondary)]'}">${s.label}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>`;
+        onb.querySelector('#onb-dismiss')?.addEventListener('click', () => {
+          localStorage.setItem('subping_onboard_done', '1');
+          onb.classList.add('hidden');
+        });
+      }
+    }
+
+    if (subs.length >= 2) {
+      this.el.dashTabs.classList.remove('hidden');
+      this.el.digestSection.classList.remove('hidden');
+      this.renderDigest(subs);
+      this.switchDashTab(this.state.dashTab);
+    } else {
+      this.el.dashTabs.classList.add('hidden');
+      this.el.digestSection.classList.add('hidden');
+    }
+
+    this.el.subsList.innerHTML = subs.map(s => this.subscriptionCardHTML(s)).join('');
+    this.el.subsList.querySelectorAll('[data-edit-id]').forEach(card => {
+      card.addEventListener('click', () => this.openSubModal(card.dataset.editId));
+    });
+    this.el.subsList.querySelectorAll('[data-qa-postpone]').forEach(btn => {
+      btn.addEventListener('click', e => { e.stopPropagation(); this.quickPostpone(btn.dataset.qaPostpone); });
+    });
+    this.el.subsList.querySelectorAll('[data-qa-delete]').forEach(btn => {
+      btn.addEventListener('click', e => { e.stopPropagation(); this.quickDelete(btn.dataset.qaDelete); });
+    });
+  }
+
+  async quickPostpone(id) {
+    const sub = this.state.subs.find(s => s.id === id);
+    if (!sub) return;
+    const d = new Date(sub.next_date + 'T00:00:00');
+    d.setDate(d.getDate() + 3);
+    sub.next_date = d.toISOString().slice(0, 10);
+    if (this.state.demo) { this.demoSaveSubs(); this.renderDashboard(); }
+    else {
+      try {
+        await this.api('/api/subscriptions/' + id, { method: 'PUT', body: JSON.stringify({ name: sub.name, amount: sub.amount, currency: sub.currency, period: sub.period, category: sub.category, next_date: sub.next_date }) });
+        this.renderDashboard();
+      } catch (err) { this.toast(err.message, 'warning'); }
+    }
+    this.toast('Перенесено на +3 дня', 'info');
+  }
+
+  async quickDelete(id) {
+    if (!confirm('Удалить подписку?')) return;
+    const sub = this.state.subs.find(s => s.id === id);
+    const monthlyEquiv = sub ? (sub.period === 'yearly' ? sub.amount / 12 : sub.period === 'weekly' ? sub.amount * 4.33 : sub.amount) : 0;
+    if (this.state.demo) {
+      this.state.subs = this.state.subs.filter(s => s.id !== id);
+      this.demoSaveSubs();
+      this.state.user.subscriptions = this.state.subs;
+      this.renderDashboard();
+      if (sub && monthlyEquiv > 0) {
+        this._addSavingsEntry(monthlyEquiv, 'Удалена «' + sub.name + '»');
+        this.toast('Удалено · +' + this.formatNumber(monthlyEquiv) + ' ₽/мес в накоплениях', 'success');
+      } else {
+        this.toast('Подписка удалена', 'info');
+      }
+    } else {
+      await this.deleteSubscription(id);
+    }
+  }
+
+
+  /* -------------------- Tab switching -------------------- */
+  switchDashTab(name) {
+    this.state.dashTab = name;
+    document.querySelectorAll('.dash-tab').forEach(t => t.classList.toggle('bg-accent', t.dataset.dashTab === name));
+    document.querySelectorAll('.dash-tab').forEach(t => t.classList.toggle('text-white', t.dataset.dashTab === name));
+    document.querySelectorAll('.dash-tab').forEach(t => t.classList.toggle('text-[var(--text-secondary)]', t.dataset.dashTab !== name));
+    this.el.dashTabAnalytics.classList.toggle('hidden', name !== 'analytics');
+    this.el.dashTabCalendar.classList.toggle('hidden', name !== 'calendar');
+    this.el.dashTabInsights.classList.toggle('hidden', name !== 'insights');
+    this.el.dashTabGoals.classList.toggle('hidden', name !== 'goals');
+    const subs = [...this.state.subs].sort((a, b) => this.daysUntil(a.next_date) - this.daysUntil(b.next_date));
+    if (name === 'analytics') this.renderAnalyticsTab(subs);
+    if (name === 'calendar') this.renderCalendarTab(subs);
+    if (name === 'insights') this.renderInsightsTab(subs);
+    if (name === 'goals') this.renderGoalsTab(subs);
+  }
+
+  /* -------------------- Digest -------------------- */
+  renderDigest(subs) {
+    const totals = this.computeTotals(subs);
+    const monthly = Object.values(totals.monthly).reduce((a, b) => a + b, 0);
+    const top3 = [...subs].sort((a, b) => b.amount - a.amount).slice(0, 3);
+    const next = subs[0];
+    const nextDays = this.daysUntil(next.next_date);
+    const nextUrg = this.urgencyClasses(nextDays);
+    this.el.digestSection.innerHTML = `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-xs font-semibold text-[var(--text-secondary)]">Ваш дайджест</p>
+          <div class="flex items-center gap-2">
+            <button type="button" id="share-btn" class="text-[10px] font-medium text-accent-400 hover:text-accent bg-accent/10 hover:bg-accent/20 px-2 py-1 rounded-lg transition-colors">Поделиться</button>
+            <span class="text-[10px] text-[var(--text-muted)]">${new Date().toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <div class="bg-surface-2 rounded-xl p-2.5 text-center">
+            <p class="text-[10px] text-[var(--text-muted)] mb-0.5">Траты/мес</p>
+            <p class="text-sm font-bold">${this.formatNumber(monthly)} ₽</p>
+          </div>
+          <div class="bg-surface-2 rounded-xl p-2.5 text-center">
+            <p class="text-[10px] text-[var(--text-muted)] mb-0.5">Подписок</p>
+            <p class="text-sm font-bold">${subs.length}</p>
+          </div>
+          <div class="bg-surface-2 rounded-xl p-2.5 text-center">
+            <p class="text-[10px] text-[var(--text-muted)] mb-0.5">След. списание</p>
+            <p class="text-sm font-bold ${nextUrg.text}">${nextDays <= 0 ? 'Сегодня' : nextDays === 1 ? 'Завтра' : nextDays + ' дн'}</p>
+          </div>
+        </div>
+        <div class="border-t border-border pt-3">
+          <p class="text-[10px] text-[var(--text-muted)] mb-2">Топ-3 самых дорогих</p>
+          ${top3.map(s => {
+            const pct = monthly > 0 ? (s.amount / monthly * 100).toFixed(0) : 0;
+            return `<div class="flex items-center gap-2 mb-1.5">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between mb-0.5">
+                  <span class="text-xs font-medium truncate">${this.escapeHtml(s.name)}</span>
+                  <span class="text-xs font-bold shrink-0">${this.formatNumber(s.amount)} ₽</span>
+                </div>
+                <div class="w-full h-1.5 bg-surface-2 rounded-full overflow-hidden">
+                  <div class="h-full bg-accent rounded-full" style="width:${pct}%"></div>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+
+    const shareBtn = this.el.digestSection.querySelector('#share-btn');
+    if (shareBtn) shareBtn.addEventListener('click', () => {
+      const yearlyTotal = Object.values(this.computeTotals(subs).yearly).reduce((a, b) => a + b, 0);
+      document.getElementById('share-amount').textContent = this.formatNumber(yearlyTotal);
+      document.getElementById('share-modal').classList.remove('hidden');
+      document.getElementById('share-modal').classList.add('flex');
+    });
+  }
+
+  /* -------------------- Analytics Tab -------------------- */
+  renderAnalyticsTab(subs) {
+    const monthly = this._projectMonths(subs, 12);
+    const catMap = {};
+    subs.forEach(s => { catMap[s.category] = (catMap[s.category] || 0) + s.amount; });
+    const maxVal = Math.max(...monthly.map(m => m.total), 1);
+    const barH = 100;
+    const barW = 24;
+    const gap = 6;
+    const svgW = monthly.length * (barW + gap);
+    const monthNames = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+    const nonZero = monthly.filter(m => m.total > 0).map(m => m.total).sort((a, b) => a - b);
+    const baseline = nonZero.length ? nonZero[Math.floor(nonZero.length / 2)] : 0;
+
+    const barSvg = `<svg viewBox="0 0 ${svgW + 10} ${barH + 28}" class="w-full" style="max-height:170px">
+      ${monthly.map((m, i) => {
+        const h = maxVal > 0 ? (m.total / maxVal) * barH : 0;
+        const x = i * (barW + gap) + 5;
+        const y = barH - h + 4;
+        const isSpike = baseline > 0 && m.total > baseline * 1.4 && !m.past;
+        const color = m.past ? 'var(--accent)' : isSpike ? 'var(--warning)' : 'var(--accent-hover)';
+        const op = m.past ? '1' : isSpike ? '0.85' : '0.5';
+        return `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(h, 2)}" rx="4" fill="${color}" opacity="${op}"/>
+          <text x="${x + barW/2}" y="${barH + 18}" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-family="system-ui">${monthNames[m.month]}</text>
+          ${h > 14 ? `<text x="${x + barW/2}" y="${y + 12}" text-anchor="middle" fill="white" font-size="8" font-weight="600" font-family="system-ui">${this.formatNumber(m.total)}</text>` : ''}
+          ${isSpike ? `<text x="${x + barW/2}" y="${barH + 26}" text-anchor="middle" fill="var(--warning)" font-size="7" font-family="system-ui">⬆</text>` : ''}`;
+      }).join('')}
+    </svg>`;
+
+    const catColors = ['#6366f1','#818cf8','#a78bfa','#c084fc','#e879f9','#f472b6','#fb7185','#f87171'];
+    const catEntries = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+    const catTotal = catEntries.reduce((s, [, v]) => s + v, 0) || 1;
+    let pieSvg = '';
+    if (catEntries.length > 0) {
+      const r = 36, cx = 44, cy = 44, circ = 2 * Math.PI * r;
+      let off = 0;
+      const slices = catEntries.map(([cat, val], i) => {
+        const pct = val / catTotal;
+        const dash = pct * circ;
+        const g = circ - dash;
+        const color = catColors[i % catColors.length];
+        const s = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="16" stroke-dasharray="${dash} ${g}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cy})"/>`;
+        off += dash;
+        return s;
+      });
+      pieSvg = `<svg viewBox="0 0 88 88" style="width:88px;height:88px">${slices.join('')}</svg>`;
+    }
+
+    const forecastMonths = this._projectMonths(subs, 12);
+    const yearProjection = forecastMonths.reduce((s, m) => s + m.total, 0);
+
+    const hasSpikes = monthly.some(m => baseline > 0 && m.total > baseline * 1.4 && !m.past);
+    this.el.dashTabAnalytics.innerHTML = `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+        <p class="text-xs font-semibold text-[var(--text-secondary)] mb-3">Прогноз трат (12 мес)</p>
+        ${barSvg}
+        ${hasSpikes ? '<p class="text-[10px] text-[var(--text-muted)] mt-1">🟧 Помесячные · 🟧⬆ Годовые списания</p>' : ''}
+        <div class="flex items-center justify-between mt-2 pt-3 border-t border-border">
+          <span class="text-[11px] text-[var(--text-muted)]">Итого за год</span>
+          <span class="text-sm font-bold">${this.formatNumber(yearProjection)} ₽</span>
+        </div>
+      </div>
+      ${catEntries.length > 0 ? `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+        <p class="text-xs font-semibold text-[var(--text-secondary)] mb-3">По категориям</p>
+        <div class="flex items-start gap-4">
+          ${pieSvg}
+          <div class="flex-1 flex flex-col gap-1.5">
+            ${catEntries.map(([cat, val], i) => {
+              const pct = (val / catTotal * 100).toFixed(0);
+              return `<div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-sm shrink-0" style="background:${catColors[i % catColors.length]}"></span>
+                <span class="text-xs flex-1 truncate">${this.escapeHtml(cat)}</span>
+                <span class="text-xs font-medium">${pct}%</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>` : ''}`;
+  }
+
+  _projectMonths(subs, count) {
+    const now = new Date();
+    const result = [];
+    for (let i = 0; i < count; i++) {
+      const mDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const monthDays = new Date(mDate.getFullYear(), mDate.getMonth() + 1, 0).getDate();
+      let total = 0;
+      subs.forEach(s => {
+        const nd = new Date(s.next_date + 'T00:00:00');
+        if (s.period === 'monthly') {
+          const monthsSince = (mDate.getFullYear() - nd.getFullYear()) * 12 + (mDate.getMonth() - nd.getMonth());
+          if (monthsSince >= 0 && nd.getDate() <= monthDays) total += s.amount;
+        } else if (s.period === 'yearly') {
+          const yearsSince = mDate.getFullYear() - nd.getFullYear();
+          if (yearsSince >= 0 && mDate.getMonth() === nd.getMonth() && nd.getDate() <= monthDays) {
+            total += s.amount;
+          }
+        } else if (s.period === 'weekly') {
+          const mStart = new Date(mDate.getFullYear(), mDate.getMonth(), 1);
+          const mEnd = new Date(mDate.getFullYear(), mDate.getMonth() + 1, 0, 23, 59, 59);
+          if (mEnd >= nd) {
+            const firstInMonth = new Date(Math.max(mStart.getTime(), nd.getTime()));
+            const daysSinceAnchor = (firstInMonth - nd) / 86400000;
+            const firstWeekOffset = Math.ceil(daysSinceAnchor / 7) * 7;
+            const firstCharge = new Date(nd.getTime() + firstWeekOffset * 86400000);
+            let cnt = 0;
+            for (let t = new Date(firstCharge); t <= mEnd; t.setDate(t.getDate() + 7)) cnt++;
+            total += s.amount * cnt;
+          }
+        }
+      });
+      result.push({ year: mDate.getFullYear(), month: mDate.getMonth(), total, past: i === 0 });
+    }
+    return result;
+  }
+
+  /* -------------------- Calendar Tab -------------------- */
+  renderCalendarTab(subs) {
+    const { calMonth, calYear } = this.state;
+    const firstDay = new Date(calYear, calMonth, 1);
+    const lastDay = new Date(calYear, calMonth + 1, 0);
+    const startDow = (firstDay.getDay() + 6) % 7;
+    const daysInMonth = lastDay.getDate();
+    const monthLabel = firstDay.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const chargeDays = {};
+    subs.forEach(s => {
+      try {
+        const d = new Date(s.next_date + 'T00:00:00');
+        const key = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+        if (!chargeDays[key]) chargeDays[key] = [];
+        chargeDays[key].push(s);
+      } catch (e) {}
+    });
+
+    const heavyWeeks = new Set();
+    const weekCharges = {};
+    for (let day = 1; day <= daysInMonth; day++) {
+      const weekNum = Math.floor((day - 1 + startDow) / 7);
+      const key = calYear + '-' + calMonth + '-' + day;
+      if (chargeDays[key]) {
+        if (!weekCharges[weekNum]) weekCharges[weekNum] = 0;
+        weekCharges[weekNum] += chargeDays[key].length;
+      }
+    }
+    Object.entries(weekCharges).forEach(([w, c]) => { if (c >= 2) heavyWeeks.add(parseInt(w)); });
+
+    let cells = '';
+    const dowNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    dowNames.forEach(d => { cells += `<div class="text-center text-[10px] font-medium text-[var(--text-muted)] py-1">${d}</div>`; });
+    for (let i = 0; i < startDow; i++) cells += '<div></div>';
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(calYear, calMonth, day);
+      const key = calYear + '-' + calMonth + '-' + day;
+      const isToday = d.getTime() === today.getTime();
+      const hasCharge = !!chargeDays[key];
+      const weekNum = Math.floor((day - 1 + startDow) / 7);
+      const isHeavy = heavyWeeks.has(weekNum);
+      let cls = 'relative rounded-lg p-1.5 text-center text-xs cursor-default transition-colors min-h-[36px]';
+      if (isToday) cls += ' bg-accent text-white font-bold ring-2 ring-accent/40';
+      else if (hasCharge) cls += ' bg-accent/10 text-accent font-medium cursor-pointer hover:bg-accent/20';
+      else if (isHeavy) cls += ' bg-warning/10';
+      else cls += ' text-[var(--text-secondary)] hover:bg-surface-2';
+      const subData = hasCharge ? chargeDays[key].map(s => s.name + ' ' + s.amount + ' ' + (App.CURRENCY_SYMBOL[s.currency] || 'RUB')).join(' | ') : '';
+      cells += `<div class="${cls}" data-cal-day="${day}" ${hasCharge ? 'data-cal-subs="' + subData.replace(/"/g, '&quot;') + '"' : ''}>
+        ${day}
+        ${hasCharge ? '<span class="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent"></span>' : ''}
+      </div>`;
+    }
+
+    this.el.dashTabCalendar.innerHTML = `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+        <div class="flex items-center justify-between mb-4">
+          <button type="button" class="cal-prev w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center hover:bg-accent/20 transition-colors" aria-label="Назад">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <p class="text-sm font-semibold capitalize">${monthLabel}</p>
+          <button type="button" class="cal-next w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center hover:bg-accent/20 transition-colors" aria-label="Вперёд">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="grid grid-cols-7 gap-1">${cells}</div>
+        <div id="cal-day-detail" class="mt-3 pt-3 border-t border-border hidden"></div>
+      </div>`;
+
+    this.el.dashTabCalendar.querySelector('.cal-prev')?.addEventListener('click', () => {
+      if (this.state.calMonth === 0) { this.state.calMonth = 11; this.state.calYear--; }
+      else this.state.calMonth--;
+      this.renderCalendarTab(subs);
+    });
+    this.el.dashTabCalendar.querySelector('.cal-next')?.addEventListener('click', () => {
+      if (this.state.calMonth === 11) { this.state.calMonth = 0; this.state.calYear++; }
+      else this.state.calMonth++;
+      this.renderCalendarTab(subs);
+    });
+    this.el.dashTabCalendar.querySelectorAll('[data-cal-subs]').forEach(cell => {
+      cell.addEventListener('click', () => {
+        const detail = this.el.dashTabCalendar.querySelector('#cal-day-detail');
+        const raw = cell.dataset.calSuns || cell.getAttribute('data-cal-subs') || '';
+        const items = raw ? raw.split(' | ') : [];
+        const dayNum = cell.dataset.calDay;
+        detail.innerHTML = `<p class="text-xs font-semibold mb-2">${dayNum} ${firstDay.toLocaleDateString('ru-RU', { month: 'long' })}</p>
+          ${items.map(name => '<p class="text-xs text-[var(--text-secondary)] flex items-center gap-1.5 mb-1"><span class="w-1.5 h-1.5 rounded-full bg-accent shrink-0"></span>' + this.escapeHtml(name) + '</p>').join('')}`;
+        detail.classList.remove('hidden');
+      });
+    });
+  }
+
+  /* -------------------- Insights Tab -------------------- */
+  renderInsightsTab(subs) {
+    const insights = [];
+
+    const nameNorm = s => s.name.toLowerCase().replace(/[^a-zа-яё0-9]/g, '');
+    const seen = {};
+    subs.forEach(s => {
+      const n = nameNorm(s);
+      Object.keys(seen).forEach(k => {
+        if ((n.includes(k) || k.includes(n)) && n !== k) {
+          if (!insights.find(i => i.type === 'dup')) {
+            insights.push({ type: 'dup', icon: '🔍', title: 'Возможный дубль', desc: '«' + s.name + '» и «' + seen[k].name + '» — похожие сервисы. Возможно, хватит одного?', saving: Math.min(s.amount, seen[k].amount) });
+          }
+        }
+      });
+      seen[n] = s;
+    });
+
+    const catMap = {};
+    subs.forEach(s => { catMap[s.category] = (catMap[s.category] || 0) + s.amount; });
+    Object.entries(catMap).forEach(([cat, total]) => {
+      const catSubs = subs.filter(s => s.category === cat);
+      if (catSubs.length >= 2) {
+        const maxSub = catSubs.reduce((a, b) => a.amount > b.amount ? a : b);
+        insights.push({ type: 'cat', icon: '📊', title: cat + ': ' + catSubs.length + ' подписки', desc: 'Суммарно ' + this.formatNumber(total) + ' ₽/мес. Самая дорогая — «' + maxSub.name + '» (' + this.formatNumber(maxSub.amount) + ' ₽).', saving: 0 });
+      }
+    });
+
+    subs.forEach(s => {
+      if (s.period === 'yearly' && s.amount > 200) {
+        const monthlyEquiv = s.amount / 12;
+        insights.push({ type: 'save', icon: '💡', title: 'Годовая vs помесячная: ' + s.name, desc: 'Годовая ' + this.formatNumber(s.amount) + ' ₽ (≈ ' + this.formatNumber(monthlyEquiv) + ' ₽/мес).', saving: 0 });
+      }
+    });
+
+    const ALTS = {
+      'яндекс плюс': { alt: 'VK Plus', price: 169, save: 130 },
+      'иви': { alt: 'Кинопоиск', price: 199, save: 200 },
+      'ivi': { alt: 'Кинопоиск', price: 199, save: 200 },
+      'кинопоиск': { alt: 'IVI', price: 399, save: 0 },
+      'spotify': { alt: 'Яндекс Музыка', price: 169, save: 130 },
+      'apple music': { alt: 'Яндекс Музыка', price: 169, save: 30 },
+      'netflix': { alt: 'Кинопоиск', price: 199, save: 400 },
+      'ozon premium': { alt: 'Яндекс Плюс', price: 299, save: 0 },
+      'telegram premium': { alt: 'Telegram (бесплатный)', price: 0, save: 349 },
+    };
+
+    const savings = insights.reduce((s, i) => s + (i.saving || 0), 0);
+
+    this.el.dashTabInsights.innerHTML = `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+        <p class="text-xs font-semibold text-[var(--text-secondary)] mb-1">Инсайты</p>
+        <p class="text-[11px] text-[var(--text-muted)]">Персональные рекомендации на основе ваших подписок</p>
+      </div>
+      ${insights.length === 0 ? `
+        <div class="bg-surface border border-border rounded-2xl shadow-card p-6 text-center">
+          <p class="text-sm font-semibold mb-1">Всё оптимально!</p>
+          <p class="text-xs text-[var(--text-secondary)]">Пока нет замечаний по вашим подпискам</p>
+        </div>` : insights.map(i => `
+        <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+          <div class="flex items-start gap-3">
+            <span class="text-lg shrink-0">${i.icon}</span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold">${this.escapeHtml(i.title)}</p>
+              <p class="text-xs text-[var(--text-secondary)] mt-1">${this.escapeHtml(i.desc)}</p>
+              ${i.saving > 0 ? '<p class="text-xs font-semibold text-accent mt-2">Можно сэкономить: ' + this.formatNumber(i.saving) + ' ₽/мес</p>' : ''}
+            </div>
+          </div>
+        </div>`).join('')}
+      ${(() => {
+        const altSuggestions = [];
+        subs.forEach(s => {
+          const key = s.name.toLowerCase();
+          const match = Object.keys(ALTS).find(k => key.includes(k));
+          if (match && ALTS[match].save > 0 && s.amount > ALTS[match].price) {
+            const a = ALTS[match];
+            const monthlyDiff = s.amount - a.price;
+            altSuggestions.push({ name: s.name, alt: a.alt, price: a.price, diff: monthlyDiff, annual: monthlyDiff * 12 });
+          }
+        });
+        if (!altSuggestions.length) return '';
+        const totalAnnual = altSuggestions.reduce((s, a) => s + a.annual, 0);
+        return `<div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-semibold text-[var(--text-secondary)]">Экономия на альтернативах</p>
+            <span class="text-xs font-bold text-success">−${this.formatNumber(totalAnnual)} ₽/год</span>
+          </div>
+          ${altSuggestions.map(a => `<div class="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+            <div class="min-w-0 flex-1">
+              <span class="text-xs">${this.escapeHtml(a.name)}</span>
+              <span class="text-[10px] text-[var(--text-muted)]"> → ${this.escapeHtml(a.alt)}</span>
+            </div>
+            <span class="text-xs font-semibold text-accent shrink-0">−${this.formatNumber(a.annual)} ₽/год</span>
+          </div>`).join('')}
+        </div>`;
+      })()}`;
+  }
+
+  /* -------------------- Goals Tab -------------------- */
+  _getSavingsLog() {
+    try { return JSON.parse(localStorage.getItem('subping_savings_log') || '[]'); } catch (e) { return []; }
+  }
+  _addSavingsEntry(amount, reason) {
+    const log = this._getSavingsLog();
+    log.push({ date: new Date().toISOString().slice(0, 10), amount, reason });
+    localStorage.setItem('subping_savings_log', JSON.stringify(log));
+  }
+  renderGoalsTab(subs) {
+    const totalMonthly = Object.values(this.computeTotals(subs).monthly).reduce((a, b) => a + b, 0);
+    let goalTarget = parseFloat(localStorage.getItem('subping_goal_target') || '0');
+    if (!goalTarget || goalTarget <= 0) {
+      goalTarget = Math.max(Math.ceil(totalMonthly / 100) * 100, 500);
+      localStorage.setItem('subping_goal_target', String(goalTarget));
+    }
+    const log = this._getSavingsLog();
+    const saved = log.reduce((s, e) => s + e.amount, 0);
+    const pct = goalTarget > 0 ? Math.min((saved / goalTarget) * 100, 100) : 0;
+
+    const monthSet = new Set(log.map(e => e.date.slice(0, 7)));
+    let streak = 0;
+    const d = new Date();
+    for (let i = 0; i < 24; i++) {
+      const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      if (monthSet.has(key)) streak++; else break;
+      d.setMonth(d.getMonth() - 1);
+    }
+
+    const badges = [];
+    if (subs.length >= 3) badges.push({ icon: '🎯', name: 'Трекер', desc: '3+ подписок под контролем' });
+    if (saved >= 1000) badges.push({ icon: '💰', name: 'Копилка', desc: 'Сэкономили ' + this.formatNumber(saved) + ' ₽' });
+    if (streak >= 2) badges.push({ icon: '🔥', name: 'Стикер', desc: streak + ' мес. подряд' });
+    if (subs.length <= 5) badges.push({ icon: '✨', name: 'Минималист', desc: '5 или менее подписок' });
+    if (saved >= goalTarget) badges.push({ icon: '🏆', name: 'Чемпион', desc: 'Цель достигнута!' });
+
+    const recentEntries = log.slice(-5).reverse();
+
+    this.el.dashTabGoals.innerHTML = `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-xs font-semibold text-[var(--text-secondary)]">Цель: сэкономить</p>
+          <button type="button" id="goal-edit-target" class="text-[10px] font-medium text-[var(--text-muted)] hover:text-accent bg-surface-2 hover:bg-accent/10 px-2 py-1 rounded-lg transition-colors">Цель: ${this.formatNumber(goalTarget)} ₽</button>
+        </div>
+        <div class="w-full h-3 bg-surface-2 rounded-full overflow-hidden mb-2">
+          <div class="h-full bg-gradient-to-r from-accent to-accent-hover rounded-full transition-all" style="width:${pct}%"></div>
+        </div>
+        <p class="text-[11px] text-[var(--text-muted)]">${pct >= 100 ? '🎉 Цель достигнута!' : 'Накоплено ' + this.formatNumber(saved) + ' из ' + this.formatNumber(goalTarget) + ' ₽'}</p>
+      </div>
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center text-xl">🔥</div>
+          <div>
+            <p class="text-sm font-bold">${streak} ${streak === 1 ? 'месяц' : streak < 5 ? 'месяца' : 'месяцев'}</p>
+            <p class="text-[11px] text-[var(--text-muted)]">Подряд с накоплениями</p>
+          </div>
+        </div>
+      </div>
+      ${recentEntries.length ? `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4 mb-3">
+        <p class="text-xs font-semibold text-[var(--text-secondary)] mb-2">Последние накопления</p>
+        ${recentEntries.map(e => `<div class="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+          <div class="min-w-0 flex-1">
+            <span class="text-xs text-[var(--text-secondary)]">${this.escapeHtml(e.reason)}</span>
+            <span class="text-[10px] text-[var(--text-muted)] ml-2">${e.date}</span>
+          </div>
+          <span class="text-xs font-semibold text-success shrink-0">+${this.formatNumber(e.amount)} ₽</span>
+        </div>`).join('')}
+      </div>` : ''}
+      ${badges.length > 0 ? `
+      <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
+        <p class="text-xs font-semibold text-[var(--text-secondary)] mb-3">Бейджи</p>
+        <div class="flex flex-wrap gap-2">
+          ${badges.map(b => '<div class="bg-surface-2 rounded-xl px-3 py-2 flex items-center gap-2"><span class="text-base">' + b.icon + '</span><div><p class="text-xs font-semibold">' + b.name + '</p><p class="text-[10px] text-[var(--text-muted)]">' + b.desc + '</p></div></div>').join('')}
+        </div>
+      </div>` : ''}`;
+
+    this.el.dashTabGoals.querySelector('#goal-edit-target')?.addEventListener('click', () => {
+      const val = prompt('Введите цель накопления (₽):', goalTarget);
+      if (val !== null && !isNaN(parseFloat(val)) && parseFloat(val) > 0) {
+        localStorage.setItem('subping_goal_target', val);
+        this.renderGoalsTab(subs);
+        this.toast('Цель обновлена', 'success');
+      }
+    });
+  }
+
+
+    subscriptionCardHTML(s) {
+    const days = this.daysUntil(s.next_date);
+    const u = this.urgencyClasses(days);
+    const symbol = App.CURRENCY_SYMBOL[s.currency] || s.currency;
+    return `
+      <div class="bg-surface hover:bg-surface-2 transition-colors border border-border rounded-2xl shadow-card p-4 fade-in">
+        <div class="flex items-center gap-3.5">
+          <div data-edit-id="${s.id}" class="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer">
+            <div class="w-11 h-11 rounded-xl bg-surface-2 border border-border flex items-center justify-center shrink-0 text-sm font-bold text-accent-400">
+              ${this.escapeHtml(s.name.slice(0, 2).toUpperCase())}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold truncate">${this.escapeHtml(s.name)}</p>
+              <p class="text-xs text-[var(--text-secondary)] truncate">${this.escapeHtml(s.category)} · ${s.period === 'yearly' ? 'ежегодно' : 'ежемесячно'}</p>
+            </div>
+            <div class="text-right shrink-0">
+              <p class="text-sm font-bold">${this.formatNumber(s.amount)} ${symbol}</p>
+              <div class="flex items-center justify-end gap-1.5 mt-1">
+                <span class="w-1.5 h-1.5 rounded-full ${u.dot} ring-dot"></span>
+                <span class="text-[11px] font-medium ${u.text}">${this.formatDaysLabel(days)}</span>
+              </div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="shrink-0 text-[var(--text-muted)]"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 mt-2 pt-2 border-t border-border">
+          <button type="button" data-qa-postpone="${s.id}" class="text-[10px] font-medium text-[var(--text-muted)] hover:text-accent bg-surface-2 hover:bg-accent/10 px-2.5 py-1 rounded-lg transition-colors">+3 дня</button>
+          <button type="button" data-qa-delete="${s.id}" class="text-[10px] font-medium text-[var(--text-muted)] hover:text-[var(--danger)] bg-surface-2 hover:bg-[var(--danger)]/10 px-2.5 py-1 rounded-lg transition-colors">Удалить</button>
+          <div class="flex-1"></div>
+          <span class="text-[10px] text-[var(--text-muted)]">${this.formatDate(s.next_date)}</span>
+        </div>
+      </div>`;
+  }
+
+  renderSettings() {
+    const user = this.state.user;
+    if (!user) return;
+    const settingsLoginBtn = document.getElementById('settings-login-btn');
+    if (settingsLoginBtn) settingsLoginBtn.classList.toggle('hidden', !this.state.demo);
+    this.el.settingsEmail.textContent = this.state.demo ? 'Демо-режим' : user.email;
+    this.el.tgInput.value = user.telegram_chat_id || '';
+    this.el.tgHint.classList.add('hidden');
+
+    this.el.paymentsCard.classList.toggle('hidden', !user.is_owner);
+    if (user.is_owner) this.renderAdminPayments();
+
+    this.el.premiumCard.innerHTML = user.premium ? `
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-sm font-semibold flex items-center gap-1.5">Premium активен
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="#22c55e" stroke-width="1.5"/></svg>
+          </p>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">Безлимит подписок, аналитика и Telegram-напоминания${user.premium_until ? ` · до ${this.formatDate(user.premium_until)}` : ''}</p>
+        </div>
+      </div>
+      <ul class="text-[11px] text-[var(--text-secondary)] flex flex-col gap-1.5 mt-3 mb-4">
+        <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Неограниченное число подписок</li>
+        <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Аналитика расходов по категориям</li>
+        <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Ближайшие списания</li>
+        <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Telegram-напоминания за 1 / 3 / 7 дней</li>
+        <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Экспорт в CSV</li>
+      </ul>
+      <div class="flex items-center justify-between gap-3 border-t border-border pt-3 mb-3">
+        <span class="text-xs text-[var(--text-secondary)]">Напоминать о списании за</span>
+        <select id="reminder-days" class="rounded-lg px-3 py-2 text-sm">
+          <option value="1">1 день</option>
+          <option value="3">3 дня</option>
+          <option value="7">7 дней</option>
+        </select>
+      </div>
+      <button type="button" id="csv-export" class="w-full text-xs font-semibold border border-border hover:border-accent/50 rounded-xl py-2.5 transition-colors flex items-center justify-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="#9497a8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Скачать CSV
+      </button>` : `
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-sm font-semibold">Перейти на Premium</p>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">Безлимит + аналитика + CSV + гибкие напоминания</p>
+        </div>
+        <button type="button" data-action="upgrade" class="shrink-0 text-[11px] font-semibold bg-accent hover:bg-accent-hover text-white px-3.5 py-2 rounded-lg transition-colors">Оформить</button>
+      </div>`;
+
+    const upgradeBtn = this.el.premiumCard.querySelector('[data-action="upgrade"]');
+    if (upgradeBtn) upgradeBtn.addEventListener('click', () => this.openPaymentModal());
+
+    const reminderSel = this.el.premiumCard.querySelector('#reminder-days');
+    if (reminderSel) {
+      reminderSel.value = String(user.reminder_days || 3);
+      reminderSel.addEventListener('change', () => this.saveReminder(parseInt(reminderSel.value, 10)));
+    }
+    const csvBtn = this.el.premiumCard.querySelector('#csv-export');
+    if (csvBtn) csvBtn.addEventListener('click', () => this.exportCSV());
+  }
+
+  async saveReminder(days) {
+    try {
+      await this.api('/api/settings/reminder', { method: 'PUT', body: JSON.stringify({ reminder_days: days }) });
+      this.state.user.reminder_days = days;
+      this.toast('Период напоминания сохранён', 'success');
+    } catch (err) {
+      this.toast(err.message, 'warning');
+      this.renderSettings();
+    }
+  }
+
+  async renderAdminPayments() {
+    try {
+      const res = await this.api('/api/admin/payments');
+      this.el.paymentsList.innerHTML = res.payments.length
+        ? res.payments.map(p => this.paymentRowHTML(p)).join('')
+        : '<p class="text-[var(--text-muted)] py-2">Пока нет платежей</p>';
+    } catch (err) {
+      this.el.paymentsList.innerHTML = `<p class="text-[var(--danger)] py-2">${this.escapeHtml(err.message)}</p>`;
+    }
+  }
+
+  paymentRowHTML(p) {
+    const date = (p.verified_at || p.created_at || '').slice(0, 16);
+    const status = p.status === 'paid'
+      ? '<span class="text-[var(--success)] font-semibold">оплачен</span>'
+      : `<span class="text-[var(--warning)] font-semibold">${this.escapeHtml(p.status)}</span>`;
+    return `
+      <div class="flex items-center justify-between gap-2 border border-border rounded-lg px-3 py-2">
+        <div class="min-w-0">
+          <p class="truncate font-medium">${this.escapeHtml(p.email)}</p>
+          <p class="text-[var(--text-muted)] truncate">${date}${p.operation_id ? ' · op ' + this.escapeHtml(p.operation_id) : ''}</p>
+        </div>
+        <div class="text-right shrink-0">
+          <p class="font-bold">${this.formatNumber(p.amount)} ₽</p>
+          ${status}
+        </div>
+      </div>`;
+  }
+
+  formatDate(isoDate) {
+    try {
+      const [y, m, d] = isoDate.split('-');
+      return `${d}.${m}.${y}`;
+    } catch (e) {
+      return isoDate;
+    }
+  }
+
+  /* -------------------------------- Premium -------------------------------- */
+  openPaymentModal() {
+    const user = this.state.user;
+    if (user && user.premium) return;
+    this.el.paymentModalBody.innerHTML = `
+      <div class="text-center">
+        <div class="w-12 h-12 rounded-2xl bg-accent/15 flex items-center justify-center mx-auto mb-4">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z" stroke="#818cf8" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </div>
+        <h2 class="text-base font-bold mb-1">SubPing Premium</h2>
+        <p class="text-xs text-[var(--text-secondary)] mb-5">Безлимит, аналитика и Telegram-напоминания</p>
+        <div class="bg-surface-2 border border-border rounded-2xl p-4 mb-5 text-left">
+          <div class="flex items-baseline gap-1 mb-3">
+            <span class="text-2xl font-extrabold">15 ₽</span>
+            <span class="text-xs text-[var(--text-secondary)]">/ месяц</span>
+          </div>
+          <ul class="text-xs text-[var(--text-secondary)] flex flex-col gap-1.5">
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Неограниченное число подписок</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Аналитика расходов по категориям</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Ближайшие списания</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Telegram-напоминания за 1 / 3 / 7 дней</li>
+            <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent"></span>Экспорт в CSV</li>
+          </ul>
+        </div>
+        <button type="button" id="pay-btn" class="w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-3">
+          Оплатить 15 ₽
+        </button>
+        <button type="button" data-action="close-payment" class="w-full text-xs text-[var(--text-secondary)] mt-3 py-1">Отмена</button>
+      </div>`;
+
+    this.el.paymentModalBody.querySelector('#pay-btn').addEventListener('click', () => this.startPayment());
+    this.el.paymentModalBody.querySelector('[data-action="close-payment"]').addEventListener('click', () => this.closePaymentModal());
+
+    this.el.paymentModal.classList.remove('hidden');
+    this.el.paymentModal.classList.add('flex');
+  }
+
+  async startPayment() {
+    if (this.state.demo) {
+      this.el.paymentModalBody.innerHTML = `
+        <div class="text-center py-6">
+          <p class="text-sm font-medium mb-4">В демо-режиме оплата недоступна</p>
+          <p class="text-xs text-[var(--text-secondary)] mb-4">Зарегистрируйтесь, чтобы оформить Premium</p>
+          <button type="button" data-action="close-payment" class="w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5">Зарегистрироваться</button>
+        </div>`;
+      this.el.paymentModalBody.querySelector('[data-action="close-payment"]')?.addEventListener('click', () => { this.closePaymentModal(); this.clearSession(); this.startDemo(); this.openAuthModal('register'); });
+      return;
+    }
+    this.el.paymentModalBody.innerHTML = this.spinnerHTML('Создание платежа…');
+    let res;
+    try {
+      res = await this.api('/api/payment/create', { method: 'POST', body: '{}' });
+    } catch (err) {
+      this.el.paymentModalBody.innerHTML = `
+        <div class="text-center py-6">
+          <p class="text-sm font-medium text-[var(--danger)] mb-4">${this.escapeHtml(err.message)}</p>
+          <button type="button" data-action="close-payment" class="w-full text-xs text-[var(--text-secondary)] py-1">Закрыть</button>
+        </div>`;
+      this.el.paymentModalBody.querySelector('[data-action="close-payment"]').addEventListener('click', () => this.closePaymentModal());
+      return;
+    }
+
+    this.state.paymentId = res.payment_id;
+    this.state.paymentManual = !res.pay_url;
+
+    if (res.pay_url) {
+      window.open(res.pay_url, '_blank');
+      this.el.paymentModalBody.innerHTML = `
+        <div class="text-center">
+          <div class="w-12 h-12 rounded-2xl bg-accent/15 flex items-center justify-center mx-auto mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h2 class="text-base font-bold mb-1">Оплата запущена</h2>
+          <p class="text-xs text-[var(--text-secondary)] mb-5">Мы открыли окно оплаты. После оплаты нажмите «Проверить».</p>
+          <button type="button" id="pay-check" class="w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-3">Проверить оплату</button>
+          <button type="button" data-action="close-payment" class="w-full text-xs text-[var(--text-secondary)] mt-3 py-1">Позже</button>
+        </div>`;
+    } else {
+      this.el.paymentModalBody.innerHTML = `
+        <div class="text-center">
+          <div class="w-12 h-12 rounded-2xl bg-accent/15 flex items-center justify-center mx-auto mb-4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h2 class="text-base font-bold mb-1">Платеж готов</h2>
+          <p class="text-xs text-[var(--text-secondary)] mb-1">Сумма: <b>15 ₽</b></p>
+          <p class="text-xs text-[var(--text-secondary)] mb-5">Переведите указанную сумму на кошелёк проекта и нажмите «Я оплатил».</p>
+          <button type="button" id="pay-check" class="w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-3">Я оплатил — проверить</button>
+          <button type="button" data-action="close-payment" class="w-full text-xs text-[var(--text-secondary)] mt-3 py-1">Позже</button>
+        </div>`;
+    }
+
+    this.el.paymentModalBody.querySelector('#pay-check').addEventListener('click', () => this.checkPayment());
+    this.el.paymentModalBody.querySelector('[data-action="close-payment"]').addEventListener('click', () => this.closePaymentModal());
+    this.startPaymentPolling();
+  }
+
+  startPaymentPolling() {
+    if (this.state.payTimer) return;
+    if (this.state.paymentManual) return;
+    this.state.payTimer = setInterval(() => this.checkPayment(true), 8000);
+  }
+
+  stopPaymentPolling() {
+    if (this.state.payTimer) {
+      clearInterval(this.state.payTimer);
+      this.state.payTimer = null;
+    }
+  }
+
+  async checkPayment(silent = false) {
+    if (!this.state.paymentId) return;
+    let res;
+    try {
+      if (this.state.paymentManual) {
+        res = await this.api('/api/payment/' + this.state.paymentId + '/confirm', { method: 'POST', body: '{}' });
+      } else {
+        res = await this.api('/api/payment/status/' + this.state.paymentId);
+      }
+    } catch (e) {
+      if (!silent) this.toast('Не удалось проверить оплату', 'warning');
+      return;
+    }
+    if (res.premium) {
+      this.stopPaymentPolling();
+      await this.loadMe();
+      this.showPaymentSuccess();
+    } else if (!silent) {
+      this.toast('Оплата ещё не подтверждена', 'warning');
+    }
+  }
+
+  showPaymentSuccess() {
+    this.state.paymentId = null;
+    this.state.paymentManual = false;
+    this.el.paymentModalBody.innerHTML = `
+      <div class="text-center py-6">
+        <div class="w-14 h-14 rounded-full bg-[var(--success)]/15 flex items-center justify-center mx-auto mb-4">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#22c55e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2 class="text-base font-bold mb-1">Оплата прошла успешно</h2>
+        <p class="text-xs text-[var(--text-secondary)] mb-6">Premium активирован на вашем аккаунте</p>
+        <button type="button" id="pay-done" class="w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-3">Готово</button>
+      </div>`;
+    this.el.paymentModalBody.querySelector('#pay-done').addEventListener('click', () => {
+      this.closePaymentModal();
+      this.renderSettings();
+      this.toast('Premium активирован', 'success');
+    });
+  }
+
+  closePaymentModal() {
+    this.stopPaymentPolling();
+    this.el.paymentModal.classList.add('hidden');
+    this.el.paymentModal.classList.remove('flex');
+    this.state.paymentId = null;
+    this.state.paymentManual = false;
+  }
+
+  /* --------------------------------- Документы ------------------------------- */
+  openDoc(key) {
+    const doc = DOCS[key];
+    if (!doc) return;
+    this.el.docTitle.textContent = doc.title;
+    this.el.docBody.innerHTML = doc.html;
+    this.el.docModal.classList.remove('hidden');
+    this.el.docModal.classList.add('flex');
+  }
+
+  closeDoc() {
+    this.el.docModal.classList.add('hidden');
+    this.el.docModal.classList.remove('flex');
+  }
+
+  spinnerHTML(text) {
+    return `
+      <div class="text-center py-10">
+        <svg class="animate-spin mx-auto mb-4" width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="#272a38" stroke-width="3"/>
+          <path d="M22 12a10 10 0 00-10-10" stroke="#6366f1" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <p class="text-sm font-medium text-[var(--text-secondary)]">${text}</p>
+      </div>`;
+  }
+
+  /* ----------------------------- Тема ----------------------------- */
+  toggleTheme() {
+    const dark = document.documentElement.dataset.theme !== 'light';
+    if (dark) {
+      document.documentElement.dataset.theme = 'light';
+      localStorage.setItem('subping-theme', 'light');
+    } else {
+      delete document.documentElement.dataset.theme;
+      localStorage.setItem('subping-theme', 'dark');
+    }
+  }
+
+  forwardTheme(a) {
+    const href = a.getAttribute('href') || '';
+    if (!href || href.indexOf('://') !== -1 || !/\.html($|\?)/.test(href) || /[?&]theme=/.test(href)) return;
+    const theme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+    a.setAttribute('href', href + (href.indexOf('?') === -1 ? '?' : '&') + 'theme=' + theme + '&v=3');
+  }
+
+  /* ----------------------------- Уведомления ----------------------------- */
+  async connectTelegram() {
+    let cfg;
+    try {
+      cfg = await this.api('/api/bot/config');
+    } catch (err) {
+      this.toast(err.message, 'warning');
+      return;
+    }
+    if (!cfg.username) {
+      this.toast('Бот временно недоступен — введите ID вручную', 'warning');
+      return;
+    }
+    const uid = this.state.user.id;
+    window.open(`https://t.me/${cfg.username}?start=connect_${uid}`, '_blank');
+    this.toast('Открыли Telegram — нажмите Start / Запустить', 'info');
+  }
+
+  async saveTelegram() {
+    const chatId = this.el.tgInput.value.trim();
+    try {
+      await this.api('/api/settings/telegram', { method: 'PUT', body: JSON.stringify({ telegram_chat_id: chatId }) });
+      this.state.user.telegram_chat_id = chatId || null;
+      this.el.tgHint.classList.remove('hidden');
+      this.toast('Telegram-уведомления сохранены', 'success');
+    } catch (err) {
+      this.toast(err.message, 'warning');
+    }
+  }
+
+  /* --------------------------------- Экспорт -------------------------------- */
+  async exportJSON() {
+    try {
+      const resp = await fetch(this.apiBase + '/api/export', {
+        headers: { 'Authorization': 'Bearer ' + this.state.token }
+      });
+      if (!resp.ok) throw new Error('Ошибка экспорта');
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `subping-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      this.toast('Файл JSON скачан', 'success');
+    } catch (err) {
+      this.toast(err.message, 'warning');
+    }
+  }
+
+  async exportCSV() {
+    try {
+      const resp = await fetch(this.apiBase + '/api/export?format=csv', {
+        headers: { 'Authorization': 'Bearer ' + this.state.token }
+      });
+      if (!resp.ok) throw new Error('Ошибка экспорта');
+      const text = await resp.text();
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `subping-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      this.toast('Файл CSV скачан', 'success');
+    } catch (err) {
+      this.toast(err.message, 'warning');
+    }
+  }
+
+  /* ---------------------------------- Утилиты -------------------------------- */
+  escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  toast(message, type = 'info') {
+    const colors = {
+      success: 'border-[var(--success)]/40 text-[var(--success)]',
+      warning: 'border-[var(--warning)]/40 text-[var(--warning)]',
+      info: 'border-border text-[var(--text-secondary)]'
+    };
+    const el = document.createElement('div');
+    el.className = `toast pointer-events-auto bg-surface-2 border ${colors[type] || colors.info} rounded-xl px-4 py-2.5 text-xs font-medium shadow-card max-w-xs`;
+    el.textContent = message;
+    this.el.toastContainer.appendChild(el);
+    setTimeout(() => {
+      el.style.transition = 'opacity .2s ease';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 200);
+    }, 2600);
+  }
+}
+
+const app = new App();
+document.addEventListener('DOMContentLoaded', () => {
+  app.init();
+});
+</script>
+</body>
+</html>
