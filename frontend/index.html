@@ -209,10 +209,12 @@
   <header class="border-b border-border sticky top-0 z-30 bg-[rgba(11,12,16,.85)] backdrop-blur">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
-        </div>
-        <span class="font-bold tracking-tight text-[15px]">SubPing</span>
+        <a href="landing.html" class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="font-bold tracking-tight text-[15px]">SubPing</span>
+        </a>
         <span id="premium-badge" class="hidden ml-1 text-[10px] font-bold uppercase tracking-wide bg-accent/15 text-accent px-2 py-0.5 rounded-full">Premium</span>
         <span id="week-badge" class="hidden ml-1 text-[10px] font-semibold bg-warning/15 text-warning px-2 py-0.5 rounded-full"></span>
       </div>
@@ -305,6 +307,7 @@
 
     <footer class="mt-8 pt-6 border-t border-border text-center">
       <nav class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-[var(--text-secondary)]">
+        <a href="landing.html" class="hover:text-accent-400 transition-colors">Сайт</a>
         <button type="button" data-doc="how" class="hover:text-accent-400 transition-colors">Как это работает</button>
         <button type="button" data-doc="delivery" class="hover:text-accent-400 transition-colors">Оплата и получение</button>
         <a href="offer.html" class="hover:text-accent-400 transition-colors">Публичная оферта</a>
@@ -314,217 +317,6 @@
       </nav>
       <p class="text-[11px] text-[var(--text-muted)] mt-3">© 2026 SubPing</p>
     </footer>
-  </div>
-
-  <!-- ======================= MARKETING SECTIONS (below dashboard) ======================= -->
-  <div class="border-t border-border mt-8">
-    <div class="max-w-sm mx-auto px-4 pt-8 pb-6">
-
-      <!-- ===== HERO (first screen) ===== -->
-      <div class="text-center mb-6">
-        <p class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-accent bg-accent/10 border border-accent/20 rounded-full px-3 py-1 mb-3">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 5.6L20 8.6l-4 4 1 5.6L12 16l-5 2.2 1-5.6-4-4 5.6-1z" fill="#818cf8"/></svg>
-          Уже 150+ человек экономят с SubPing
-        </p>
-        <h2 class="text-[22px] leading-[1.2] font-extrabold tracking-tight">Больше не плати за <span class="text-accent-400">забытые подписки</span></h2>
-        <p class="text-sm text-[var(--text-secondary)] mt-3 mb-5">SubPing собирает все списания в одном месте и напоминает в Telegram до того, как деньги уйдут.</p>
-        <!-- Two CTA buttons -->
-        <div class="flex flex-col gap-2.5 mb-3">
-          <button type="button" id="mktg-demo-btn" class="w-full bg-surface border border-border hover:border-accent/50 text-[var(--text-secondary)] hover:text-white text-sm font-semibold rounded-xl py-2.5 transition-colors flex items-center justify-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
-            Посмотреть, как работает
-          </button>
-          <button type="button" id="mktg-cta-btn" class="w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2">
-            Начать бесплатно
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
-        <p class="text-[10px] text-[var(--text-muted)] flex items-center justify-center gap-1">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2"/></svg>
-          Бесплатно до 3 подписок · Оплата через ЮKassa · Не храним данные карт
-        </p>
-      </div>
-
-      <!-- ===== CALCULATOR (pre-filled, emotional) ===== -->
-      <div class="mb-6 bg-surface border border-border rounded-2xl shadow-card p-5 fade-in">
-        <p class="text-sm font-bold mb-1">Сколько вы переплачиваете?</p>
-        <p class="text-[11px] text-[var(--text-secondary)] mb-4">У среднего россиянина 7 подписок по 300 ₽. Вот что это значит:</p>
-        <!-- Auto-calculated result (shows immediately) -->
-        <div id="calc-auto-result" class="mb-4">
-          <div class="bg-warning/10 border border-warning/20 rounded-xl p-4 text-center">
-            <p class="text-[11px] text-warning mb-1">Вы переплачиваете</p>
-            <p id="calc-auto-waste" class="text-xl font-extrabold text-warning">630 ₽/мес</p>
-            <p class="text-[11px] text-[var(--text-secondary)] mt-1">За год — <span id="calc-auto-yearly" class="font-bold text-warning">7 560 ₽</span></p>
-          </div>
-        </div>
-        <!-- Sliders -->
-        <div class="flex flex-col gap-4 mb-4">
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="text-[11px] font-medium text-[var(--text-secondary)]">Количество подписок</label>
-              <span id="calc-count-val" class="text-xs font-bold text-accent-400">7</span>
-            </div>
-            <input type="range" id="calc-count" min="1" max="20" value="7" class="w-full h-2 rounded-full appearance-none cursor-pointer accent-[var(--accent)]" style="background:var(--surface-2)">
-          </div>
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="text-[11px] font-medium text-[var(--text-secondary)]">Средняя стоимость (₽/мес)</label>
-              <span id="calc-price-val" class="text-xs font-bold text-accent-400">300 ₽</span>
-            </div>
-            <input type="range" id="calc-price" min="50" max="3000" value="300" step="50" class="w-full h-2 rounded-full appearance-none cursor-pointer accent-[var(--accent)]" style="background:var(--surface-2)">
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-2 mb-3">
-          <div class="bg-surface-2 rounded-xl p-3 text-center"><p class="text-[10px] text-[var(--text-muted)] mb-0.5">Траты в месяц</p><p id="calc-monthly" class="text-base font-bold text-accent-400">2 100 ₽</p></div>
-          <div class="bg-surface-2 rounded-xl p-3 text-center"><p class="text-[10px] text-[var(--text-muted)] mb-0.5">Траты в год</p><p id="calc-yearly" class="text-base font-bold text-accent-400">25 200 ₽</p></div>
-        </div>
-        <button type="button" id="mktg-cta-btn-2" class="w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2">
-          Проверить свои подписки
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </div>
-
-      <!-- ===== TAB NAVIGATION ===== -->
-      <div class="mb-4">
-        <div class="flex bg-surface-2 rounded-xl p-1 text-[11px] font-medium mb-4">
-          <button type="button" data-mktg-tab="how" class="mktg-tab flex-1 py-2 rounded-lg transition-colors text-center">Как работает</button>
-          <button type="button" data-mktg-tab="compare" class="mktg-tab flex-1 py-2 rounded-lg transition-colors text-center">Сравнение</button>
-          <button type="button" data-mktg-tab="reviews" class="mktg-tab flex-1 py-2 rounded-lg transition-colors text-center">Отзывы</button>
-          <button type="button" data-mktg-tab="faq" class="mktg-tab flex-1 py-2 rounded-lg transition-colors text-center">FAQ</button>
-        </div>
-
-        <!-- Tab: How it works -->
-        <div id="mktg-tab-how" class="mktg-tab-content">
-          <div class="flex flex-col gap-3 mb-4">
-            <div class="bg-surface border border-border rounded-2xl shadow-card p-4 flex items-start gap-4">
-              <div class="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center shrink-0"><span class="text-lg font-bold text-accent">1</span></div>
-              <div><p class="text-[13px] font-semibold mb-0.5">Добавьте подписку</p><p class="text-[11px] text-[var(--text-secondary)]">Название, сумма и дата списания — 30 секунд на форму.</p></div>
-            </div>
-            <div class="bg-surface border border-border rounded-2xl shadow-card p-4 flex items-start gap-4">
-              <div class="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center shrink-0"><span class="text-lg font-bold text-accent">2</span></div>
-              <div><p class="text-[13px] font-semibold mb-0.5">Получите напоминание</p><p class="text-[11px] text-[var(--text-secondary)]">Бот напишет в Telegram за 1–7 дней до списания.</p></div>
-            </div>
-            <div class="bg-surface border border-border rounded-2xl shadow-card p-4 flex items-start gap-4">
-              <div class="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center shrink-0"><span class="text-lg font-bold text-accent">3</span></div>
-              <div><p class="text-[13px] font-semibold mb-0.5">Отмените или оплатите</p><p class="text-[11px] text-[var(--text-secondary)]">Вы решаете: продлить подписку или сэкономить.</p></div>
-            </div>
-          </div>
-          <!-- Telegram Chat Screenshot -->
-          <div class="mb-4">
-            <div class="bg-[#1a2332] rounded-2xl shadow-card overflow-hidden border border-[#2a3a4e]">
-              <div class="bg-[#1f2e3f] px-4 py-3 flex items-center gap-3 border-b border-[#2a3a4e]">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#2AABEE"><path d="M21.9 3.1L2.4 11.4c-.9.4-.9 1.4 0 1.8l4.9 1.7 1.8 5.7c.3.9 1.4 1.1 2 .4l2.6-2.8 5.2 3.8c.7.5 1.7.1 1.9-.8l2.8-16c.2-1-.9-1.9-1.7-1.4zM8.4 14.1l8.9-5.7c.3-.2.6.2.3.5l-6.7 6.3-.3 3.4-2.2-4.5z"/></svg>
-                <div><p class="text-white text-[13px] font-semibold">SubPing</p><p class="text-[#7ea3b8] text-[10px]">бот · онлайн</p></div>
-              </div>
-              <div class="px-4 py-4 flex flex-col gap-3">
-                <div class="bg-[#2a3a4e] rounded-2xl rounded-tl-sm px-4 py-3 max-w-[90%]">
-                  <p class="text-white text-[13px] mb-1.5">🔔 Завтра списание</p>
-                  <div class="flex items-center gap-2 bg-[#1f2e3f] rounded-xl px-3 py-2"><span class="text-base">📺</span><div class="flex-1"><p class="text-white text-[12px] font-semibold">Яндекс Плюс</p><p class="text-[#7ea3b8] text-[11px]">299 ₽ · списание завтра</p></div></div>
-                  <p class="text-[#7ea3b8] text-[11px] mt-2">Не забудьте продлить или отменить подписку.</p>
-                </div>
-                <div class="bg-[#2a3a4e] rounded-2xl rounded-tl-sm px-4 py-3 max-w-[90%]">
-                  <p class="text-white text-[13px] mb-1.5">📊 Итого за август</p>
-                  <div class="grid grid-cols-3 gap-2 mt-2">
-                    <div class="bg-[#1f2e3f] rounded-lg px-2 py-1.5 text-center"><p class="text-[10px] text-[#7ea3b8]">Подписок</p><p class="text-white text-[13px] font-bold">3</p></div>
-                    <div class="bg-[#1f2e3f] rounded-lg px-2 py-1.5 text-center"><p class="text-[10px] text-[#7ea3b8]">В месяц</p><p class="text-white text-[13px] font-bold">1 047 ₽</p></div>
-                    <div class="bg-[#1f2e3f] rounded-lg px-2 py-1.5 text-center"><p class="text-[10px] text-[#7ea3b8]">В год</p><p class="text-white text-[13px] font-bold">12 564 ₽</p></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <p class="text-center text-[10px] text-[var(--text-muted)] mt-2">Так выглядит Telegram-бот SubPing</p>
-          </div>
-          <button type="button" class="mktg-signup-btn w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2">
-            Попробовать бесплатно
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
-
-        <!-- Tab: Compare -->
-        <div id="mktg-tab-compare" class="mktg-tab-content hidden">
-          <div class="bg-surface border border-border rounded-2xl shadow-card p-5 fade-in">
-            <p class="text-sm font-bold mb-4">SubPing vs привычные способы</p>
-            <div class="overflow-x-auto">
-              <table class="w-full text-xs">
-                <thead><tr class="border-b border-border"><th class="text-left py-2 pr-2 font-semibold text-[var(--text-secondary)]">Функция</th><th class="text-center py-2 px-2 font-semibold text-[var(--text-secondary)]">Excel</th><th class="text-center py-2 px-2 font-semibold text-accent-400">SubPing</th><th class="text-center py-2 px-2 font-semibold text-[var(--text-secondary)]">«Голова»</th></tr></thead>
-                <tbody class="text-[var(--text-secondary)]">
-                  <tr class="border-b border-border/50"><td class="py-2 pr-2">Напоминания в Telegram</td><td class="text-center py-2 px-2">❌</td><td class="text-center py-2 px-2 font-semibold text-success">✅</td><td class="text-center py-2 px-2">❌</td></tr>
-                  <tr class="border-b border-border/50"><td class="py-2 pr-2">Автоподсчёт годовой суммы</td><td class="text-center py-2 px-2">вручную</td><td class="text-center py-2 px-2 font-semibold text-success">авто</td><td class="text-center py-2 px-2">забудете</td></tr>
-                  <tr class="border-b border-border/50"><td class="py-2 pr-2">Доступ с телефона</td><td class="text-center py-2 px-2">неудобно</td><td class="text-center py-2 px-2 font-semibold text-success">✅</td><td class="text-center py-2 px-2">✅</td></tr>
-                  <tr class="border-b border-border/50"><td class="py-2 pr-2">Аналитика расходов</td><td class="text-center py-2 px-2">ручная</td><td class="text-center py-2 px-2 font-semibold text-success">дайджест</td><td class="text-center py-2 px-2">нет</td></tr>
-                  <tr><td class="py-2 pr-2">Бесплатно</td><td class="text-center py-2 px-2">✅</td><td class="text-center py-2 px-2 font-semibold text-success">✅</td><td class="text-center py-2 px-2">✅</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <!-- Pricing mini -->
-          <div class="mt-3 bg-surface border border-border rounded-2xl shadow-card p-5 fade-in">
-            <p class="text-sm font-bold mb-3">Тарифы</p>
-            <div class="flex flex-col gap-3">
-              <div class="flex items-center justify-between gap-3"><div class="min-w-0"><p class="text-[13px] font-semibold">Бесплатный</p><p class="text-[11px] text-[var(--text-secondary)]">До 3 подписок, базовая статистика</p></div><span class="shrink-0 text-sm font-bold text-[var(--text-secondary)]">0 ₽</span></div>
-              <div class="border-t border-border pt-3 flex items-center justify-between gap-3"><div class="min-w-0"><p class="text-[13px] font-semibold flex items-center gap-1.5">Premium <span class="text-[10px] font-bold uppercase tracking-wide bg-accent/15 text-accent px-1.5 py-0.5 rounded-full">популярный</span></p><p class="text-[11px] text-[var(--text-secondary)]">Безлимит, аналитика, Telegram, CSV</p></div><span class="shrink-0 text-sm font-bold">15 ₽<span class="text-[10px] font-normal text-[var(--text-muted)]">/мес</span></span></div>
-            </div>
-            <button type="button" id="marketing-register-btn" class="mt-4 w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5">Начать бесплатно</button>
-          </div>
-        </div>
-
-        <!-- Tab: Reviews -->
-        <div id="mktg-tab-reviews" class="mktg-tab-content hidden">
-          <div class="flex flex-col gap-3 mb-4">
-            <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
-              <div class="flex items-center gap-3 mb-2.5">
-                <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">А</div>
-                <div><p class="text-xs font-semibold">Алексей К.</p><p class="text-[10px] text-[var(--text-muted)]">freelancer · Тверь</p></div>
-                <span class="ml-auto text-[10px] text-[var(--text-muted)]">Июнь 2026</span>
-              </div>
-              <p class="text-[12px] text-[var(--text-secondary)] leading-relaxed">«Забыл отменить подписку на Кинопоиск — потерял 599 ₽. С SubPing бот напомнил за 3 дня, отменил вовремя. Теперь у меня 7 подписок под контролем.»</p>
-              <div class="flex items-center gap-1 mt-2 text-warning text-xs">★★★★★</div>
-            </div>
-            <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
-              <div class="flex items-center gap-3 mb-2.5">
-                <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-xs font-bold">М</div>
-                <div><p class="text-xs font-semibold">Мария В.</p><p class="text-[10px] text-[var(--text-muted)]">маркетолог · Москва</p></div>
-                <span class="ml-auto text-[10px] text-[var(--text-muted)]">Июль 2026</span>
-              </div>
-              <p class="text-[12px] text-[var(--text-secondary)] leading-relaxed">«Аналитика показала, что я плачу за 2 сервиса, которыми не пользуюсь. Сэкономила 600 ₽/мес — это 7 200 ₽ в год. SubPing быстро настроила, удобно с телефона.»</p>
-              <div class="flex items-center gap-1 mt-2 text-warning text-xs">★★★★★</div>
-            </div>
-            <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
-              <div class="flex items-center gap-3 mb-2.5">
-                <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold">Д</div>
-                <div><p class="text-xs font-semibold">Дмитрий П.</p><p class="text-[10px] text-[var(--text-muted)]">разработчик · Казань</p></div>
-                <span class="ml-auto text-[10px] text-[var(--text-muted)]">Август 2026</span>
-              </div>
-              <p class="text-[12px] text-[var(--text-secondary)] leading-relaxed">«У меня 11 подписок — считать вручную было невозможно. SubPing автоматически считает годовые расходы и показывает, где можно сэкономить. Рекомендую.»</p>
-              <div class="flex items-center gap-1 mt-2 text-warning text-xs">★★★★★</div>
-            </div>
-          </div>
-          <button type="button" class="mktg-signup-btn w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2">
-            Попробовать бесплатно
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
-
-        <!-- Tab: FAQ -->
-        <div id="mktg-tab-faq" class="mktg-tab-content hidden">
-          <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
-            <div class="flex flex-col gap-2">
-              <details class="group border border-border rounded-xl px-3.5 py-2.5" open><summary class="list-none flex items-center justify-between gap-2 cursor-pointer text-[13px] font-semibold select-none">Безопасны ли данные моей карты?<svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="shrink-0 text-[var(--text-muted)] transition-transform group-open:rotate-180"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p class="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed">Оплата проходит через ЮKassa — сайт не хранит данные карт. SubPing хранит только название и сумму подписки.</p></details>
-              <details class="group border border-border rounded-xl px-3.5 py-2.5"><summary class="list-none flex items-center justify-between gap-2 cursor-pointer text-[13px] font-semibold select-none">Как отменить подписку?<svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="shrink-0 text-[var(--text-muted)] transition-transform group-open:rotate-180"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p class="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed">Удалите подписку в личном кабинете или через бота в Telegram. Никаких скрытых отмен.</p></details>
-              <details class="group border border-border rounded-xl px-3.5 py-2.5"><summary class="list-none flex items-center justify-between gap-2 cursor-pointer text-[13px] font-semibold select-none">Что будет, если не оплатить Premium?<svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="shrink-0 text-[var(--text-muted)] transition-transform group-open:rotate-180"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p class="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed">Ничего страшного — автопродления нет. До конца месяца Premium останется активным.</p></details>
-              <details class="group border border-border rounded-xl px-3.5 py-2.5"><summary class="list-none flex items-center justify-between gap-2 cursor-pointer text-[13px] font-semibold select-none">Можно ли пользоваться бесплатно?<svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="shrink-0 text-[var(--text-muted)] transition-transform group-open:rotate-180"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p class="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed">Да. До 3 подписок бесплатно навсегда. Никакого скрытого тарифа.</p></details>
-            </div>
-          </div>
-          <button type="button" class="mktg-signup-btn w-full mt-4 bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2">
-            Попробовать бесплатно
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <p class="text-center text-[10px] text-[var(--text-muted)] mt-6">© 2026 SubPing · <a href="offer.html" class="hover:text-accent-400 transition-colors">Оферта</a> · <a href="privacy_policy.html" class="hover:text-accent-400 transition-colors">Конфиденциальность</a></p>
-    </div>
   </div>
 </section>
 
@@ -603,6 +395,7 @@
 
     <footer class="mt-8 pt-6 border-t border-border text-center">
       <nav class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-[var(--text-secondary)]">
+        <a href="landing.html" class="hover:text-accent-400 transition-colors">Сайт</a>
         <button type="button" data-doc="how" class="hover:text-accent-400 transition-colors">Как это работает</button>
         <button type="button" data-doc="delivery" class="hover:text-accent-400 transition-colors">Оплата и получение</button>
         <a href="offer.html" class="hover:text-accent-400 transition-colors">Публичная оферта</a>
@@ -1181,60 +974,6 @@ class App {
       navigator.clipboard.writeText(text).then(() => this.toast('Текст скопирован!', 'success')).catch(() => this.toast('Не удалось скопировать', 'warning'));
       document.getElementById('share-modal').classList.add('hidden');
       document.getElementById('share-modal').classList.remove('flex');
-    });
-
-    const heroRegBtn = document.getElementById('hero-register-btn');
-    if (heroRegBtn) heroRegBtn.addEventListener('click', () => { this.clearSession(); this.startDemo(); this.openAuthModal('register'); });
-
-    // Marketing tabs
-    document.querySelectorAll('.mktg-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.mktg-tab').forEach(t => { t.classList.toggle('bg-accent', t.dataset.mktgTab === btn.dataset.mktgTab); t.classList.toggle('text-white', t.dataset.mktgTab === btn.dataset.mktgTab); t.classList.toggle('text-[var(--text-secondary)]', t.dataset.mktgTab !== btn.dataset.mktgTab); });
-        document.querySelectorAll('.mktg-tab-content').forEach(c => c.classList.add('hidden'));
-        const target = document.getElementById('mktg-tab-' + btn.dataset.mktgTab);
-        if (target) target.classList.remove('hidden');
-      });
-    });
-    // Init first tab
-    const firstTab = document.querySelector('.mktg-tab');
-    if (firstTab) { firstTab.classList.add('bg-accent', 'text-white'); firstTab.classList.remove('text-[var(--text-secondary)]'); }
-
-    // Calculator sliders (auto-calc)
-    const calcCount = document.getElementById('calc-count');
-    const calcPrice = document.getElementById('calc-price');
-    const calcUpdate = () => {
-      if (!calcCount || !calcPrice) return;
-      const count = parseInt(calcCount.value) || 7;
-      const price = parseInt(calcPrice.value) || 300;
-      const monthly = count * price;
-      const yearly = monthly * 12;
-      const forgotten = Math.round(monthly * 0.2);
-      document.getElementById('calc-count-val').textContent = count;
-      document.getElementById('calc-price-val').textContent = this.formatNumber(price) + ' ₽';
-      document.getElementById('calc-auto-waste').textContent = this.formatNumber(forgotten) + ' ₽/мес';
-      document.getElementById('calc-auto-yearly').textContent = this.formatNumber(forgotten * 12) + ' ₽';
-      document.getElementById('calc-monthly').textContent = this.formatNumber(monthly) + ' ₽';
-      document.getElementById('calc-yearly').textContent = this.formatNumber(yearly) + ' ₽';
-    };
-    if (calcCount) calcCount.addEventListener('input', calcUpdate);
-    if (calcPrice) calcPrice.addEventListener('input', calcUpdate);
-    // Init calc display
-    calcUpdate();
-
-    // Marketing CTA buttons
-    const mktgDemoBtn = document.getElementById('mktg-demo-btn');
-    if (mktgDemoBtn) mktgDemoBtn.addEventListener('click', () => { this.startDemo(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
-    const mktgCtaBtn = document.getElementById('mktg-cta-btn');
-    if (mktgCtaBtn) mktgCtaBtn.addEventListener('click', () => { this.clearSession(); this.startDemo(); this.openAuthModal('register'); });
-    const mktgCtaBtn2 = document.getElementById('mktg-cta-btn-2');
-    if (mktgCtaBtn2) mktgCtaBtn2.addEventListener('click', () => { this.clearSession(); this.startDemo(); this.openAuthModal('register'); });
-
-    const mktgRegBtn = document.getElementById('marketing-register-btn');
-    if (mktgRegBtn) mktgRegBtn.addEventListener('click', () => { this.clearSession(); this.startDemo(); this.openAuthModal('register'); });
-
-    // All .mktg-signup-btn buttons
-    document.querySelectorAll('.mktg-signup-btn').forEach(btn => {
-      btn.addEventListener('click', () => { this.clearSession(); this.startDemo(); this.openAuthModal('register'); });
     });
 
     if (!localStorage.getItem('subping_exit_seen')) {
