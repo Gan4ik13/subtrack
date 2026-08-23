@@ -15,6 +15,11 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b0c10">
+<script>
+  if (localStorage.getItem('subtrack_token')) {
+    window.location.replace('/app.html');
+  }
+</script>
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
     (function(m,e,t,r,i,k,a){
@@ -343,6 +348,20 @@
     </div>
   </div>
 
+  <!-- ===== EMAIL CHECKLIST LEAD-GEN ===== -->
+  <div class="mb-6 bg-surface border border-border rounded-2xl shadow-card p-5 fade-in">
+    <div class="w-12 h-12 rounded-full bg-warning/15 flex items-center justify-center mx-auto mb-4">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z" stroke="#eab308" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <p class="text-base font-bold mb-2 text-center">5 подписок, которые вы точно забыли отменить</p>
+    <p class="text-xs text-[var(--text-secondary)] mb-4 text-center">Получите чек-лист с самыми «невидимыми» списаниями + советы по экономии на почту</p>
+    <div class="flex gap-2">
+      <input type="email" id="checklist-email" placeholder="Ваш email" class="flex-1 rounded-xl px-3.5 py-2.5 text-sm">
+      <button type="button" id="checklist-submit" class="shrink-0 bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl px-4 py-2.5">Получить</button>
+    </div>
+    <p id="checklist-done" class="hidden text-xs text-success mt-2 text-center">Чек-лист отправлен! Проверьте почту.</p>
+  </div>
+
   <!-- Footer -->
   <p class="text-center text-[10px] text-[var(--text-muted)] mt-6">© 2026 SubPing · <a href="offer.html" class="hover:text-accent-400 transition-colors">Оферта</a> · <a href="privacy_policy.html" class="hover:text-accent-400 transition-colors">Конфиденциальность</a></p>
 </div>
@@ -398,6 +417,15 @@
     document.getElementById('hero-demo-btn')?.addEventListener('click', function (e) {
       e.preventDefault();
       document.querySelector('.tab-btn')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // Checklist email form
+    document.getElementById('checklist-submit')?.addEventListener('click', function () {
+      const email = document.getElementById('checklist-email')?.value?.trim();
+      if (!email || !email.includes('@')) return;
+      document.getElementById('checklist-email').classList.add('hidden');
+      document.getElementById('checklist-submit').classList.add('hidden');
+      document.getElementById('checklist-done')?.classList.remove('hidden');
     });
   })();
 </script>
