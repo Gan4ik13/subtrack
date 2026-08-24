@@ -92,6 +92,44 @@ def activate_premium(conn, user_id: int, months: int = 1) -> None:
     )
 
 
+def activate_premium_tier(conn, user_id: int, tier: str = "monthly") -> None:
+    """Activate premium based on tier (monthly/yearly/lifetime)."""
+    if tier == "lifetime":
+        new_until = datetime.date.today() + datetime.timedelta(days=36500)
+        conn.execute(
+            "UPDATE users SET premium = 1, premium_until = ? WHERE id = ?",
+            (new_until.isoformat(), user_id),
+        )
+        return
+    days = pay.TIER_DURATIONS.get(tier, 30)
+    row = conn.execute("SELECT premium_until FROM users WHERE id = ?", (user_id,)).fetchone()
+    base = datetime.date.today()
+    if row and row["premium_until"]:
+        try:
+            existing = datetime.date.fromisoformat(row["premium_until"])
+            if existing > base:
+                base = existing
+        except ValueError:
+            pass
+    new_until = base + datetime.timedelta(days=days)
+    conn.execute(
+        "UPDATE users SET premium = 1, premium_until = ? WHERE id = ?",
+        (new_until.isoformat(), user_id),
+    )
+
+
+def _extract_tier_from_comment(comment: str) -> str:
+    """Extract tier from payment comment like 'subtrack-123-abc|SubPing Premium (1 год)'."""
+    if "|" not in comment:
+        return "monthly"
+    label = comment.split("|", 1)[1]
+    if "навсегда" in label:
+        return "lifetime"
+    if "год" in label:
+        return "yearly"
+    return "monthly"
+
+
 @app.get("/health")
 def health():
     return {"ok": True}
@@ -253,17 +291,26 @@ def delete_sub(sid: str, user: dict = Depends(current_user)):
 
 @app.post("/api/payment/create")
 @retry_db
-def create_payment(user: dict = Depends(current_user), request: Request = None):
+async def create_payment(request: Request, user: dict = Depends(current_user)):
     if user["premium"]:
         raise HTTPException(400, "Premium уже активен")
+    try:
+        body = await request.json()
+        tier = body.get("tier", "monthly")
+    except Exception:
+        tier = "monthly"
+    if tier not in pay.TIER_PRICES:
+        tier = "monthly"
+    amount = pay.TIER_PRICES[tier]
     pid = pay.new_payment_id()
-    comment = f"subtrack-{user['id']}-{pid[-6:]}"
+    label = pay.TIER_LABELS.get(tier, "SubPing Premium")
+    comment = f"subtrack-{user['id']}-{pid[-6:]}|{label}"
     with db() as conn:
         conn.execute(
             "INSERT INTO payments (id, user_id, provider, amount, comment, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            (pid, user["id"], pay.PAYMENT_MODE, pay.PRICE_RUB, comment, now_iso()),
+            (pid, user["id"], pay.PAYMENT_MODE, amount, comment, now_iso()),
         )
-    payment = {"id": pid, "comment": comment, "amount": pay.PRICE_RUB}
+    payment = {"id": pid, "comment": comment, "amount": amount}
     try:
         pay_url = pay.build_payment_url(payment, base_url=str(request.base_url), customer_email=user["email"])
     except Exception as e:
@@ -273,7 +320,7 @@ def create_payment(user: dict = Depends(current_user), request: Request = None):
             "UPDATE payments SET status='created', external_id=? WHERE id=?",
             (payment.get("external_id"), pid),
         )
-    return {"payment_id": pid, "pay_url": pay_url}
+    return {"payment_id": pid, "pay_url": pay_url, "amount": amount, "tier": tier}
 
 
 @app.get("/api/payment/pay/{pid}")
@@ -344,7 +391,8 @@ def _activate_premium_by_label(label: str, meta: dict = None) -> None:
         if not p:
             return
         user = conn.execute("SELECT * FROM users WHERE id=?", (p["user_id"],)).fetchone()
-        activate_premium(conn, p["user_id"])
+        tier = _extract_tier_from_comment(p.get("comment", ""))
+        activate_premium_tier(conn, p["user_id"], tier)
         if meta:
             conn.execute(
                 "UPDATE payments SET status='paid', verified_at=?, operation_id=?, sender=?, paid_amount=? WHERE id=?",
@@ -369,7 +417,8 @@ def _activate_premium_by_external(external_id: str, meta: dict = None) -> None:
         if not p:
             return
         user = conn.execute("SELECT * FROM users WHERE id=?", (p["user_id"],)).fetchone()
-        activate_premium(conn, p["user_id"])
+        tier = _extract_tier_from_comment(p.get("comment", ""))
+        activate_premium_tier(conn, p["user_id"], tier)
         if meta:
             conn.execute(
                 "UPDATE payments SET status='paid', verified_at=?, operation_id=?, sender=?, paid_amount=? WHERE id=?",

@@ -16,8 +16,24 @@ YOOKASSA_SHOP_ID = os.environ.get("YOOKASSA_SHOP_ID", "")
 YOOKASSA_SECRET_KEY = os.environ.get("YOOKASSA_SECRET_KEY", "")
 YOOKASSA_VAT_CODE = int(os.environ.get("YOOKASSA_VAT_CODE", "1"))
 
-PRICE_RUB = float(os.environ.get("PRICE_RUB", "15"))
+PRICE_RUB = float(os.environ.get("PRICE_RUB", "99"))
 PAYMENT_MODE = os.environ.get("PAYMENT_MODE", "manual")
+
+TIER_PRICES = {
+    "monthly": 99,
+    "yearly": 499,
+    "lifetime": 799,
+}
+TIER_DURATIONS = {
+    "monthly": 30,
+    "yearly": 365,
+    "lifetime": 36500,
+}
+TIER_LABELS = {
+    "monthly": "SubPing Premium (1 месяц)",
+    "yearly": "SubPing Premium (1 год)",
+    "lifetime": "SubPing Premium (навсегда)",
+}
 
 
 def _yookassa_headers(idempotency_key: str = "") -> dict:
@@ -53,7 +69,7 @@ def _yookassa_create_payment(payment: dict, customer_email: str = "") -> dict:
             "tax_system": 1,
             "items": [
                 {
-                    "description": "SubPing Premium (1 месяц)",
+                    "description": payment.get("comment", "SubPing Premium")[:128],
                     "quantity": "1.00",
                     "amount": {"value": f"{payment['amount']:.2f}", "currency": "RUB"},
                     "vat_code": YOOKASSA_VAT_CODE,
