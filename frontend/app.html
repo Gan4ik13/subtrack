@@ -1467,10 +1467,15 @@ class App {
   _getShareText() {
     const subs = this.state.subs;
     const totals = this.computeTotals(subs);
-    const monthly = totals.monthly;
-    const yearly = totals.yearly;
-    const yearlySum = Object.values(yearly).reduce((a, b) => a + b, 0);
-    return 'Я трачу ' + this.formatNumber(Math.round(monthly)) + ' ₽/мес на ' + subs.length + ' подписок (' + this.formatNumber(Math.round(yearlySum)) + ' ₽/год). А ты?\n\nsubping.ru — трекер подписок, который напоминает о списаниях и помогает не платить лишнего.';
+    const monthlySum = Object.values(totals.monthly).reduce((a, b) => a + b, 0);
+    const yearlySum = Object.values(totals.yearly).reduce((a, b) => a + b, 0);
+    return 'Я трачу ' + this.formatNumber(Math.round(monthlySum)) + ' ₽/мес на ' + subs.length + this._pluralSubs(subs.length) + ' (' + this.formatNumber(Math.round(yearlySum)) + ' ₽/год). А ты?\n\nsubping.ru — трекер подписок, который напоминает о списаниях и помогает не платить лишнего.';
+  }
+
+  _pluralSubs(n) {
+    if (n % 10 === 1 && n % 100 !== 11) return ' подписку';
+    if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) return ' подписки';
+    return ' подписок';
   }
 
   formatNumber(n) {
