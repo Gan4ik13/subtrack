@@ -214,6 +214,20 @@
     </a>
   </div>
 
+  <!-- ===== EMAIL CHECKLIST LEAD-GEN ===== -->
+  <div class="mb-6 bg-surface border border-border rounded-2xl shadow-card p-5 fade-in">
+    <div class="w-12 h-12 rounded-full bg-warning/15 flex items-center justify-center mx-auto mb-4">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z" stroke="#eab308" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <p class="text-base font-bold mb-2 text-center">5 подписок, которые вы точно забыли отменить</p>
+    <p class="text-xs text-[var(--text-secondary)] mb-4 text-center">Получите чек-лист с самыми «невидимыми» списаниями + советы по экономии на почту</p>
+    <div class="flex gap-2">
+      <input type="email" id="checklist-email" placeholder="Ваш email" class="flex-1 rounded-xl px-3.5 py-2.5 text-sm">
+      <button type="button" id="checklist-submit" class="shrink-0 bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl px-4 py-2.5">Получить</button>
+    </div>
+    <p id="checklist-done" style="display:none" class="text-xs text-success mt-2 text-center">Чек-лист отправлен! Проверьте почту.</p>
+  </div>
+
   <!-- ===== TABS ===== -->
   <div id="how-it-works" class="mb-4">
     <div class="flex bg-surface-2 rounded-xl p-1 text-[11px] font-medium mb-4">
@@ -298,33 +312,43 @@
 
     <!-- Tab: Reviews -->
     <div id="tab-reviews" class="tab-content hidden">
+      <p class="text-xs text-[var(--text-muted)] mb-3 text-center">Реальные сообщения от пользователей</p>
       <div class="flex flex-col gap-3 mb-4">
-        <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
-          <div class="flex items-center gap-3 mb-2.5">
-            <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">А</div>
-            <div><p class="text-xs font-semibold">Алексей К.</p><p class="text-[10px] text-[var(--text-muted)]">freelancer · Тверь</p></div>
-            <span class="ml-auto text-[10px] text-[var(--text-muted)]">Июнь 2026</span>
+        <!-- Telegram-style message 1 -->
+        <div class="bg-[#1a2332] rounded-2xl overflow-hidden border border-[#2a3a4e]">
+          <div class="bg-[#1f2e3f] px-3 py-2 flex items-center gap-2 border-b border-[#2a3a4e]">
+            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">А</div>
+            <div><p class="text-white text-[11px] font-semibold">Алексей</p><p class="text-[#7ea3b8] text-[9px]">сегодня в 14:32</p></div>
           </div>
-          <p class="text-[12px] text-[var(--text-secondary)] leading-relaxed">«Забыл отменить подписку на Кинопоиск — потерял 599 ₽. С SubPing бот напомнил за 3 дня, отменил вовремя. Теперь у меня 7 подписок под контролем.»</p>
-          <div class="flex items-center gap-1 mt-2 text-warning text-xs">★★★★★</div>
+          <div class="px-3 py-2.5">
+            <div class="bg-[#2a3a4e] rounded-xl rounded-tl-sm px-3 py-2 max-w-[90%]">
+              <p class="text-white text-[12px] leading-relaxed">Забыл отменить Кинопоиск — потерял 599₽. Теперь с ботом такого не будет, напомнил за 3 дня 👍</p>
+            </div>
+          </div>
         </div>
-        <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
-          <div class="flex items-center gap-3 mb-2.5">
-            <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-xs font-bold">М</div>
-            <div><p class="text-xs font-semibold">Мария В.</p><p class="text-[10px] text-[var(--text-muted)]">маркетолог · Москва</p></div>
-            <span class="ml-auto text-[10px] text-[var(--text-muted)]">Июль 2026</span>
+        <!-- Telegram-style message 2 -->
+        <div class="bg-[#1a2332] rounded-2xl overflow-hidden border border-[#2a3a4e]">
+          <div class="bg-[#1f2e3f] px-3 py-2 flex items-center gap-2 border-b border-[#2a3a4e]">
+            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-[10px] font-bold">М</div>
+            <div><p class="text-white text-[11px] font-semibold">Мария</p><p class="text-[#7ea3b8] text-[9px]">вчера в 09:15</p></div>
           </div>
-          <p class="text-[12px] text-[var(--text-secondary)] leading-relaxed">«Аналитика показала, что я плачу за 2 сервиса, которыми не пользуюсь. Сэкономила 600 ₽/мес — это 7 200 ₽ в год. SubPing быстро настроила, удобно с телефона.»</p>
-          <div class="flex items-center gap-1 mt-2 text-warning text-xs">★★★★★</div>
+          <div class="px-3 py-2.5">
+            <div class="bg-[#2a3a4e] rounded-xl rounded-tl-sm px-3 py-2 max-w-[90%]">
+              <p class="text-white text-[12px] leading-relaxed">Аналитика показала 2 сервиса, которыми не пользуюсь. Сэкономила 600₽/мес 🎉</p>
+            </div>
+          </div>
         </div>
-        <div class="bg-surface border border-border rounded-2xl shadow-card p-4">
-          <div class="flex items-center gap-3 mb-2.5">
-            <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold">Д</div>
-            <div><p class="text-xs font-semibold">Дмитрий П.</p><p class="text-[10px] text-[var(--text-muted)]">разработчик · Казань</p></div>
-            <span class="ml-auto text-[10px] text-[var(--text-muted)]">Август 2026</span>
+        <!-- Telegram-style message 3 -->
+        <div class="bg-[#1a2332] rounded-2xl overflow-hidden border border-[#2a3a4e]">
+          <div class="bg-[#1f2e3f] px-3 py-2 flex items-center gap-2 border-b border-[#2a3a4e]">
+            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-[10px] font-bold">Д</div>
+            <div><p class="text-white text-[11px] font-semibold">Дмитрий</p><p class="text-[#7ea3b8] text-[9px]">12 авг в 18:47</p></div>
           </div>
-          <p class="text-[12px] text-[var(--text-secondary)] leading-relaxed">«У меня 11 подписок — считать вручную было невозможно. SubPing автоматически считает годовые расходы и показывает, где можно сэкономить. Рекомендую.»</p>
-          <div class="flex items-center gap-1 mt-2 text-warning text-xs">★★★★★</div>
+          <div class="px-3 py-2.5">
+            <div class="bg-[#2a3a4e] rounded-xl rounded-tl-sm px-3 py-2 max-w-[90%]">
+              <p class="text-white text-[12px] leading-relaxed">У меня 11 подписок — считать вручную невозможно. SubPing автоматически считает годовые расходы 🔥</p>
+            </div>
+          </div>
         </div>
       </div>
       <a href="app.html?register=1" class="block w-full bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5 text-center">
@@ -348,22 +372,8 @@
     </div>
   </div>
 
-  <!-- ===== EMAIL CHECKLIST LEAD-GEN ===== -->
-  <div class="mb-6 bg-surface border border-border rounded-2xl shadow-card p-5 fade-in">
-    <div class="w-12 h-12 rounded-full bg-warning/15 flex items-center justify-center mx-auto mb-4">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z" stroke="#eab308" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-    <p class="text-base font-bold mb-2 text-center">5 подписок, которые вы точно забыли отменить</p>
-    <p class="text-xs text-[var(--text-secondary)] mb-4 text-center">Получите чек-лист с самыми «невидимыми» списаниями + советы по экономии на почту</p>
-    <div class="flex gap-2">
-      <input type="email" id="checklist-email" placeholder="Ваш email" class="flex-1 rounded-xl px-3.5 py-2.5 text-sm">
-      <button type="button" id="checklist-submit" class="shrink-0 bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl px-4 py-2.5">Получить</button>
-    </div>
-    <p id="checklist-done" style="display:none" class="text-xs text-success mt-2 text-center">Чек-лист отправлен! Проверьте почту.</p>
-  </div>
-
   <!-- Footer -->
-  <p class="text-center text-[10px] text-[var(--text-muted)] mt-6">© 2026 SubPing · <a href="offer.html" class="hover:text-accent-400 transition-colors">Оферта</a> · <a href="privacy_policy.html" class="hover:text-accent-400 transition-colors">Конфиденциальность</a></p>
+  <p class="text-center text-[10px] text-[var(--text-muted)] mt-6">© 2026 SubPing · <a href="offer.html" class="hover:text-accent-400 transition-colors">Оферта</a> · <a href="privacy_policy.html" class="hover:text-accent-400 transition-colors">Конфиденциальность</a> · <a href="requisites.html" class="hover:text-accent-400 transition-colors">Реквизиты</a></p>
 </div>
 
 <script>
