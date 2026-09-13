@@ -224,7 +224,8 @@
       <canvas id="game-canvas" class="game-canvas" width="760" height="520" aria-label="Мини-игра SubPing"></canvas>
       <p class="text-[10px] text-[var(--text-muted)] text-center mt-3">← → или проведи пальцем по полю</p>
     </div>
-    <div id="game-result" class="hidden p-8 text-center"><p class="text-2xl font-bold mb-2">Неплохо!</p><p id="game-result-text" class="text-xs text-[var(--text-secondary)] mb-5"></p><button type="button" id="game-replay" class="bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-xl px-5 py-2.5">Ещё раз</button></div>
+    <div id="game-result" class="hidden p-8 text-center"><p class="text-2xl font-bold mb-2">Неплохо!</p><p id="game-result-text" class="text-xs text-[var(--text-secondary)] mb-4"></p><div class="flex gap-2 max-w-sm mx-auto mb-3"><input id="game-player-name" maxlength="20" placeholder="Твоё имя в таблице" class="min-w-0 flex-1 rounded-xl px-3 py-2.5 text-sm"><button type="button" id="game-submit" class="bg-accent hover:bg-accent-hover text-white text-xs font-semibold rounded-xl px-3">В топ</button></div><button type="button" id="game-replay" class="border border-border hover:border-accent/50 text-sm font-semibold rounded-xl px-5 py-2.5">Ещё раз</button></div>
+    <div id="game-leaderboard" class="border-t border-border px-5 py-4"><div class="flex items-center justify-between mb-3"><p class="text-xs font-bold">Топ-10 игроков</p><span class="text-[10px] text-[var(--text-muted)]">виртуальная экономия</span></div><div id="game-leaderboard-list" class="flex flex-col gap-1.5"><p class="text-[11px] text-[var(--text-muted)]">Загрузка рекордов…</p></div></div>
   </div>
 </div>
 
@@ -1007,6 +1008,7 @@ class App {
     document.getElementById('game-no')?.addEventListener('click', () => this.closeGame());
     document.getElementById('game-start')?.addEventListener('click', () => this.startGame());
     document.getElementById('game-replay')?.addEventListener('click', () => this.startGame());
+    document.getElementById('game-submit')?.addEventListener('click', () => this.submitGameScore());
     document.getElementById('game-modal')?.addEventListener('click', e => { if (e.target.id === 'game-modal') this.closeGame(); });
 
     document.querySelectorAll('[data-dash-tab]').forEach(btn => {
@@ -1520,12 +1522,44 @@ class App {
     document.getElementById('game-board').classList.add('hidden');
     document.getElementById('game-result').classList.add('hidden');
     modal.classList.remove('hidden'); modal.classList.add('flex');
+    this.loadLeaderboard();
   }
 
   closeGame() {
     this.gameRunning = false;
     const modal = document.getElementById('game-modal');
     modal.classList.add('hidden'); modal.classList.remove('flex');
+  }
+
+  renderLeaderboard(scores) {
+    const list = document.getElementById('game-leaderboard-list');
+    if (!scores.length) { list.innerHTML = '<p class="text-[11px] text-[var(--text-muted)]">Пока пусто. Стань первым!</p>'; return; }
+    list.innerHTML = scores.map((row, i) => `<div class="flex items-center gap-2 text-xs"><span class="w-5 text-center font-bold ${i < 3 ? 'text-warning' : 'text-[var(--text-muted)]'}">${i + 1}</span><span class="flex-1 truncate">${this.escapeHtml(row.player_name)}</span><b class="text-accent-400">${this.formatNumber(row.score)} ₽</b></div>`).join('');
+  }
+
+  async loadLeaderboard() {
+    try {
+      const data = await this.api('/api/game/leaderboard');
+      this.renderLeaderboard(data.scores || []);
+    } catch (err) {
+      try { this.renderLeaderboard(JSON.parse(localStorage.getItem('subping-game-scores') || '[]')); } catch (e) { this.renderLeaderboard([]); }
+    }
+  }
+
+  async submitGameScore() {
+    const nameInput = document.getElementById('game-player-name');
+    const playerName = nameInput.value.trim() || (this.state.user?.email?.split('@')[0] || 'Игрок');
+    const score = this.gameScore || 0;
+    try {
+      await this.api('/api/game/leaderboard', { method: 'POST', body: JSON.stringify({ player_name: playerName, score }) });
+    } catch (err) {
+      const scores = JSON.parse(localStorage.getItem('subping-game-scores') || '[]');
+      scores.push({ player_name: playerName, score }); scores.sort((a, b) => b.score - a.score);
+      localStorage.setItem('subping-game-scores', JSON.stringify(scores.slice(0, 10)));
+    }
+    nameInput.value = playerName;
+    await this.loadLeaderboard();
+    this.toast('Результат добавлен в таблицу', 'success');
   }
 
   startGame() {
@@ -1548,7 +1582,7 @@ class App {
     const move = e => { if (e.key === 'ArrowLeft') keys.left = e.type !== 'keyup'; if (e.key === 'ArrowRight') keys.right = e.type !== 'keyup'; };
     const touch = e => { const rect = canvas.getBoundingClientRect(); player.x = (e.touches[0].clientX - rect.left) / rect.width * canvas.width; };
     window.addEventListener('keydown', move); window.addEventListener('keyup', move); canvas.addEventListener('touchmove', touch, { passive: true });
-    const finish = () => { window.removeEventListener('keydown', move); window.removeEventListener('keyup', move); canvas.removeEventListener('touchmove', touch); this.gameRunning = false; document.getElementById('game-board').classList.add('hidden'); document.getElementById('game-result').classList.remove('hidden'); document.getElementById('game-result-text').textContent = `Ты сохранил виртуально ${score} ₽. Настоящая экономия начинается с первой отменённой подписки.`; };
+    const finish = () => { window.removeEventListener('keydown', move); window.removeEventListener('keyup', move); canvas.removeEventListener('touchmove', touch); this.gameRunning = false; this.gameScore = score; document.getElementById('game-board').classList.add('hidden'); document.getElementById('game-result').classList.remove('hidden'); document.getElementById('game-result-text').textContent = `Ты сохранил виртуально ${score} ₽. Настоящая экономия начинается с первой отменённой подписки.`; };
     const frame = time => {
       if (!this.gameRunning) { finish(); return; }
       const dt = Math.min((time - last) / 16.67 || 1, 2); last = time; spawn -= dt;

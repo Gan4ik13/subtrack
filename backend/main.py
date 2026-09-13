@@ -61,6 +61,11 @@ class ReminderIn(BaseModel):
     reminder_days: int
 
 
+class GameScoreIn(BaseModel):
+    player_name: str = "Игрок"
+    score: int
+
+
 def current_user(authorization: str = Header(default="")):
     if not authorization.startswith("Bearer "):
         raise HTTPException(401, "Не авторизован")
@@ -218,6 +223,34 @@ def bot_config():
         "enabled": bool(notify.BOT_TOKEN),
         "username": bot.get_bot_username(),
     }
+
+
+@app.get("/api/game/leaderboard")
+@retry_db
+def game_leaderboard():
+    with db() as conn:
+        rows = conn.execute(
+            "SELECT player_name, score FROM game_scores ORDER BY score DESC, id ASC LIMIT 10"
+        ).fetchall()
+    return {"scores": [dict(row) for row in rows]}
+
+
+@app.post("/api/game/leaderboard")
+@retry_db
+def submit_game_score(body: GameScoreIn, authorization: str = Header(default="")):
+    player_name = " ".join(body.player_name.strip().split())[:20] or "Игрок"
+    score = max(0, min(int(body.score), 999999))
+    user_id = None
+    if authorization.startswith("Bearer "):
+        with db() as conn:
+            session = conn.execute("SELECT user_id FROM auth_sessions WHERE token = ?", (authorization[7:],)).fetchone()
+            user_id = session["user_id"] if session else None
+    with db() as conn:
+        conn.execute(
+            "INSERT INTO game_scores (player_name, score, created_at, user_id) VALUES (?, ?, ?, ?)",
+            (player_name, score, now_iso(), user_id),
+        )
+    return {"ok": True}
 
 
 def _notify_payment(user, p, until: str) -> None:

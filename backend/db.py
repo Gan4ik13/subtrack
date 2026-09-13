@@ -69,6 +69,15 @@ CREATE TABLE IF NOT EXISTS payments (
     verified_at TEXT,
     FOREIGN KEY(user_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS game_scores (
+    {id_col},
+    player_name TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    user_id INTEGER,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
 """
 
 
