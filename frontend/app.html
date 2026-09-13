@@ -140,6 +140,8 @@
   .icon-moon{ display:none; }
   :root[data-theme="light"] .icon-moon{ display:block; }
   :root[data-theme="light"] .icon-sun{ display:none; }
+  .game-canvas{display:block;width:100%;height:auto;max-height:58vh;border:1px solid var(--border);border-radius:18px;background:#0b0c10;touch-action:none;}
+  .game-prompt{background:radial-gradient(circle at 50% 0%,rgba(99,102,241,.2),transparent 55%),var(--surface);}
 </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -204,6 +206,29 @@
 </div>
 
 <!-- ======================= VIEW: DASHBOARD ======================= -->
+<!-- Mini-game -->
+<div id="game-modal" class="hidden fixed inset-0 z-[95] bg-black/70 backdrop-blur-sm p-4 items-center justify-center">
+  <div class="w-full max-w-lg bg-surface border border-border rounded-3xl shadow-2xl overflow-hidden fade-in">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-border">
+      <div><p class="text-sm font-bold">SubPing: поймай экономию</p><p class="text-[10px] text-[var(--text-muted)]">Лови отменённые подписки, уворачивайся от списаний</p></div>
+      <button type="button" id="game-close" class="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center hover:bg-accent/15" aria-label="Закрыть">×</button>
+    </div>
+    <div id="game-prompt" class="game-prompt p-8 text-center">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-accent/15 border border-accent/30 flex items-center justify-center text-3xl">✦</div>
+      <p class="text-lg font-bold mb-2">Пять секунд на перезагрузку</p>
+      <p class="text-xs text-[var(--text-secondary)] max-w-xs mx-auto mb-6">Поймай отменённые подписки и заработай виртуальную экономию. Данные аккаунта не используются.</p>
+      <div class="flex gap-2 justify-center"><button type="button" id="game-start" class="bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-xl px-5 py-2.5">Сыграть</button><button type="button" id="game-no" class="border border-border hover:border-accent/50 text-sm font-semibold rounded-xl px-5 py-2.5">Нет, спасибо</button></div>
+    </div>
+    <div id="game-board" class="hidden p-4 sm:p-5">
+      <div class="flex items-center justify-between mb-3 text-xs"><span class="text-[var(--text-secondary)]">Экономия <b id="game-score" class="text-accent-400">0 ₽</b></span><span class="text-[var(--text-secondary)]">Жизни <b id="game-lives" class="text-warning">♥♥♥</b></span></div>
+      <canvas id="game-canvas" class="game-canvas" width="640" height="420" aria-label="Мини-игра SubPing"></canvas>
+      <p class="text-[10px] text-[var(--text-muted)] text-center mt-3">← → или проведи пальцем по полю</p>
+    </div>
+    <div id="game-result" class="hidden p-8 text-center"><p class="text-2xl font-bold mb-2">Неплохо!</p><p id="game-result-text" class="text-xs text-[var(--text-secondary)] mb-5"></p><button type="button" id="game-replay" class="bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-xl px-5 py-2.5">Ещё раз</button></div>
+  </div>
+</div>
+
+<!-- ======================= VIEW: DASHBOARD ======================= -->
 <section data-view="dashboard" class="min-h-screen pb-0">
   <!-- Header -->
   <header class="border-b border-border sticky top-0 z-30 bg-[rgba(11,12,16,.85)] backdrop-blur">
@@ -224,6 +249,7 @@
           <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="#9497a8" stroke-width="1.7"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/></svg>
           <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" stroke="#9497a8" stroke-width="1.7" stroke-linejoin="round"/></svg>
         </button>
+        <button type="button" id="game-open" title="Мини-игра" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Открыть мини-игру">✦</button>
         <button type="button" data-doc="how" title="Как это работает" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Как это работает">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#9497a8" stroke-width="1.7"/><path d="M9.5 9a2.5 2.5 0 114.9.8c-.5 1-1.9 1.5-1.9 2.7" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="#9497a8"/></svg>
         </button>
@@ -976,6 +1002,12 @@ class App {
     if (headerLoginBtn) headerLoginBtn.addEventListener('click', () => { this.clearSession(); this.startDemo(); this.openAuthModal(); });
     const settingsLoginBtn = document.getElementById('settings-login-btn');
     if (settingsLoginBtn) settingsLoginBtn.addEventListener('click', () => { this.clearSession(); this.startDemo(); this.openAuthModal(); });
+    document.getElementById('game-open')?.addEventListener('click', () => this.openGame());
+    document.getElementById('game-close')?.addEventListener('click', () => this.closeGame());
+    document.getElementById('game-no')?.addEventListener('click', () => this.closeGame());
+    document.getElementById('game-start')?.addEventListener('click', () => this.startGame());
+    document.getElementById('game-replay')?.addEventListener('click', () => this.startGame());
+    document.getElementById('game-modal')?.addEventListener('click', e => { if (e.target.id === 'game-modal') this.closeGame(); });
 
     document.querySelectorAll('[data-dash-tab]').forEach(btn => {
       btn.addEventListener('click', () => this.switchDashTab(btn.dataset.dashTab));
@@ -1480,6 +1512,49 @@ class App {
 
   formatNumber(n) {
     return n % 1 === 0 ? n.toFixed(0) : n.toFixed(2);
+  }
+
+  openGame() {
+    const modal = document.getElementById('game-modal');
+    document.getElementById('game-prompt').classList.remove('hidden');
+    document.getElementById('game-board').classList.add('hidden');
+    document.getElementById('game-result').classList.add('hidden');
+    modal.classList.remove('hidden'); modal.classList.add('flex');
+  }
+
+  closeGame() {
+    this.gameRunning = false;
+    const modal = document.getElementById('game-modal');
+    modal.classList.add('hidden'); modal.classList.remove('flex');
+  }
+
+  startGame() {
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('game-score');
+    const livesEl = document.getElementById('game-lives');
+    document.getElementById('game-prompt').classList.add('hidden');
+    document.getElementById('game-result').classList.add('hidden');
+    document.getElementById('game-board').classList.remove('hidden');
+    const player = { x: canvas.width / 2, y: canvas.height - 42, w: 54, h: 18, speed: 7 };
+    const items = []; const keys = { left: false, right: false };
+    let score = 0; let lives = 3; let last = 0; let spawn = 0;
+    this.gameRunning = true; scoreEl.textContent = '0 ₽'; livesEl.textContent = '♥♥♥';
+    const move = e => { if (e.key === 'ArrowLeft') keys.left = e.type !== 'keyup'; if (e.key === 'ArrowRight') keys.right = e.type !== 'keyup'; };
+    const touch = e => { const rect = canvas.getBoundingClientRect(); player.x = (e.touches[0].clientX - rect.left) / rect.width * canvas.width; };
+    window.addEventListener('keydown', move); window.addEventListener('keyup', move); canvas.addEventListener('touchmove', touch, { passive: true });
+    const finish = () => { window.removeEventListener('keydown', move); window.removeEventListener('keyup', move); canvas.removeEventListener('touchmove', touch); this.gameRunning = false; document.getElementById('game-board').classList.add('hidden'); document.getElementById('game-result').classList.remove('hidden'); document.getElementById('game-result-text').textContent = `Ты сохранил виртуально ${score} ₽. Настоящая экономия начинается с первой отменённой подписки.`; };
+    const frame = time => {
+      if (!this.gameRunning) { finish(); return; }
+      const dt = Math.min((time - last) / 16.67 || 1, 2); last = time; spawn -= dt;
+      if (keys.left) player.x -= player.speed * dt; if (keys.right) player.x += player.speed * dt;
+      player.x = Math.max(player.w / 2, Math.min(canvas.width - player.w / 2, player.x));
+      if (spawn <= 0) { items.push({ x: 20 + Math.random() * (canvas.width - 40), y: -20, good: Math.random() > .35, value: [99, 199, 299, 399][Math.floor(Math.random() * 4)], speed: 2.5 + Math.random() * 2 }); spawn = Math.max(14, 28 - score / 80); }
+      ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#0b0c10'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.strokeStyle = 'rgba(129,140,248,.12)'; ctx.beginPath(); for (let y = 30; y < canvas.height; y += 40) { ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); } ctx.stroke();
+      for (let i = items.length - 1; i >= 0; i--) { const item = items[i]; item.y += item.speed * dt; const hit = item.y + 16 > player.y - 8 && item.y - 16 < player.y + player.h && Math.abs(item.x - player.x) < player.w / 2 + 15; if (hit) { if (item.good) score += item.value; else lives--; items.splice(i, 1); scoreEl.textContent = `${score} ₽`; livesEl.textContent = '♥'.repeat(lives) + '♡'.repeat(3 - lives); if (lives <= 0) { finish(); return; } continue; } if (item.y > canvas.height + 20) items.splice(i, 1); ctx.font = '26px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = item.good ? '#4ade80' : '#f59e0b'; ctx.fillText(item.good ? '✓' : '₽', item.x, item.y); }
+      ctx.fillStyle = '#818cf8'; ctx.beginPath(); ctx.roundRect(player.x - player.w / 2, player.y, player.w, player.h, 9); ctx.fill(); ctx.fillStyle = '#f1f2f6'; ctx.beginPath(); ctx.arc(player.x, player.y - 8, 8, 0, Math.PI * 2); ctx.fill(); requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
   }
 
   /* -------------------------------- Рендеринг ------------------------------- */
