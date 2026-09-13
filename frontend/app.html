@@ -1538,6 +1538,11 @@ class App {
     document.getElementById('game-board').classList.remove('hidden');
     const player = { x: canvas.width / 2, y: canvas.height - 42, w: 54, h: 18, speed: 7 };
     const items = []; const keys = { left: false, right: false };
+    const subscriptions = [
+      { name: 'Netflix', short: 'N', color: '#22c55e', value: 599 }, { name: 'Яндекс Плюс', short: 'Я', color: '#ef4444', value: 299 },
+      { name: 'Иви', short: 'И', color: '#f97316', value: 399 }, { name: 'VK Музыка', short: 'VK', color: '#60a5fa', value: 169 },
+      { name: 'Telegram', short: 'T', color: '#38bdf8', value: 349 }, { name: 'Кинопоиск', short: 'К', color: '#eab308', value: 299 }
+    ];
     let score = 0; let lives = 3; let last = 0; let spawn = 0;
     this.gameRunning = true; scoreEl.textContent = '0 ₽'; livesEl.textContent = '♥♥♥';
     const move = e => { if (e.key === 'ArrowLeft') keys.left = e.type !== 'keyup'; if (e.key === 'ArrowRight') keys.right = e.type !== 'keyup'; };
@@ -1549,10 +1554,10 @@ class App {
       const dt = Math.min((time - last) / 16.67 || 1, 2); last = time; spawn -= dt;
       if (keys.left) player.x -= player.speed * dt; if (keys.right) player.x += player.speed * dt;
       player.x = Math.max(player.w / 2, Math.min(canvas.width - player.w / 2, player.x));
-      if (spawn <= 0) { items.push({ x: 20 + Math.random() * (canvas.width - 40), y: -20, good: Math.random() > .35, value: [99, 199, 299, 399][Math.floor(Math.random() * 4)], speed: 2.5 + Math.random() * 2 }); spawn = Math.max(14, 28 - score / 80); }
+      if (spawn <= 0) { const subscription = subscriptions[Math.floor(Math.random() * subscriptions.length)]; const good = Math.random() > .35; items.push({ x: 42 + Math.random() * (canvas.width - 84), y: -30, w: 84, h: 52, good, ...subscription, speed: 2.5 + Math.random() * 2 }); spawn = Math.max(18, 32 - score / 100); }
       ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#0b0c10'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.strokeStyle = 'rgba(129,140,248,.12)'; ctx.beginPath(); for (let y = 30; y < canvas.height; y += 40) { ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); } ctx.stroke();
-      for (let i = items.length - 1; i >= 0; i--) { const item = items[i]; item.y += item.speed * dt; const hit = item.y + 16 > player.y - 8 && item.y - 16 < player.y + player.h && Math.abs(item.x - player.x) < player.w / 2 + 15; if (hit) { if (item.good) score += item.value; else lives--; items.splice(i, 1); scoreEl.textContent = `${score} ₽`; livesEl.textContent = '♥'.repeat(lives) + '♡'.repeat(3 - lives); if (lives <= 0) { finish(); return; } continue; } if (item.y > canvas.height + 20) items.splice(i, 1); ctx.font = '26px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = item.good ? '#4ade80' : '#f59e0b'; ctx.fillText(item.good ? '✓' : '₽', item.x, item.y); }
-      ctx.fillStyle = '#818cf8'; ctx.beginPath(); ctx.roundRect(player.x - player.w / 2, player.y, player.w, player.h, 9); ctx.fill(); ctx.fillStyle = '#f1f2f6'; ctx.beginPath(); ctx.arc(player.x, player.y - 8, 8, 0, Math.PI * 2); ctx.fill(); requestAnimationFrame(frame);
+      for (let i = items.length - 1; i >= 0; i--) { const item = items[i]; item.y += item.speed * dt; const hit = item.y + item.h > player.y - 16 && item.y < player.y + player.h && Math.abs(item.x - player.x) < item.w / 2 + player.w / 2; if (hit) { if (item.good) score += item.value; else lives--; items.splice(i, 1); scoreEl.textContent = `${score} ₽`; livesEl.textContent = '♥'.repeat(lives) + '♡'.repeat(3 - lives); if (lives <= 0) { finish(); return; } continue; } if (item.y > canvas.height + 20) items.splice(i, 1); ctx.fillStyle = item.color; ctx.beginPath(); ctx.roundRect(item.x - 12, item.y, 24, 24, 5); ctx.fill(); ctx.fillStyle = '#0b0c10'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(item.short, item.x, item.y + 16); ctx.fillStyle = item.good ? '#4ade80' : '#fb7185'; ctx.font = '10px sans-serif'; ctx.fillText(item.name, item.x, item.y + 35); ctx.font = '9px sans-serif'; ctx.fillStyle = item.good ? '#86efac' : '#fda4af'; ctx.fillText(item.good ? 'Отмена' : 'Списание', item.x, item.y + 47); }
+      const headY = player.y - 25; ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(player.x, player.y - 14); ctx.lineTo(player.x, player.y + 12); ctx.moveTo(player.x, player.y - 7); ctx.lineTo(player.x - 14, player.y + 3); ctx.moveTo(player.x, player.y - 7); ctx.lineTo(player.x + 14, player.y + 3); ctx.moveTo(player.x, player.y + 12); ctx.lineTo(player.x - 11, player.y + 28); ctx.moveTo(player.x, player.y + 12); ctx.lineTo(player.x + 11, player.y + 28); ctx.stroke(); ctx.fillStyle = '#f1f2f6'; ctx.beginPath(); ctx.arc(player.x, headY, 10, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.arc(player.x - 3, headY - 3, 8, Math.PI, Math.PI * 1.8); ctx.fill(); requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
   }
