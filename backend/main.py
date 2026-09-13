@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import json
 import os
+import re
 import urllib.parse
 import uuid
 
@@ -64,6 +65,26 @@ class ReminderIn(BaseModel):
 class GameScoreIn(BaseModel):
     player_name: str = "Игрок"
     score: int
+
+
+_GAME_NAME_TRANSLATION = str.maketrans({
+    "0": "о", "1": "и", "3": "з", "4": "ч", "@": "а", "$": "с",
+    "ё": "е", "і": "и", "є": "е", "ї": "и",
+    "x": "х", "y": "у",
+})
+_GAME_PROFANITY = (
+    "хуй", "хуе", "хуё", "пизд", "еба", "ебл", "ебу", "бля", "шлюх",
+    "долбо", "мудо", "гандон", "сучк", "fuck", "shit", "bitch", "dick",
+    "pussy", "cunt",
+)
+
+
+def _clean_game_name(value: str) -> str:
+    name = " ".join(value.strip().split())[:20]
+    normalized = re.sub(r"[^a-zа-яё]+", " ", name.lower().translate(_GAME_NAME_TRANSLATION))
+    if any(word in normalized.replace(" ", "") for word in _GAME_PROFANITY):
+        raise HTTPException(400, "Имя содержит недопустимые слова")
+    return name or "Игрок"
 
 
 def current_user(authorization: str = Header(default="")):
@@ -238,7 +259,7 @@ def game_leaderboard():
 @app.post("/api/game/leaderboard")
 @retry_db
 def submit_game_score(body: GameScoreIn, authorization: str = Header(default="")):
-    player_name = " ".join(body.player_name.strip().split())[:20] or "Игрок"
+    player_name = _clean_game_name(body.player_name)
     score = max(0, min(int(body.score), 999999))
     user_id = None
     if authorization.startswith("Bearer "):

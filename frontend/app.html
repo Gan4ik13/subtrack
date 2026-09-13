@@ -1553,6 +1553,7 @@ class App {
     try {
       await this.api('/api/game/leaderboard', { method: 'POST', body: JSON.stringify({ player_name: playerName, score }) });
     } catch (err) {
+      if (err.message.includes('недопустим')) { this.toast(err.message, 'warning'); return; }
       const scores = JSON.parse(localStorage.getItem('subping-game-scores') || '[]');
       scores.push({ player_name: playerName, score }); scores.sort((a, b) => b.score - a.score);
       localStorage.setItem('subping-game-scores', JSON.stringify(scores.slice(0, 10)));
