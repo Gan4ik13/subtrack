@@ -11,7 +11,7 @@ services:
       - key: PAYMENT_MODE
         value: yoomoney
       - key: PRICE_RUB
-        value: "15"
+        value: "99"
       - key: DATABASE_URL
         sync: false
       - key: TG_BOT_TOKEN
