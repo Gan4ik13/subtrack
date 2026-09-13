@@ -2526,6 +2526,24 @@ class App {
     const uid = this.state.user.id;
     window.open(`https://t.me/${cfg.username}?start=connect_${uid}`, '_blank');
     this.toast('Открыли Telegram — нажмите Start / Запустить', 'info');
+
+    const startedAt = Date.now();
+    const checkConnection = async () => {
+      try {
+        const latest = await this.api('/api/me');
+        if (latest.telegram_chat_id) {
+          this.state.user = latest;
+          this.state.subs = latest.subscriptions || [];
+          this.renderDashboard();
+          this.toast('Telegram подключён', 'success');
+          return;
+        }
+      } catch (err) {
+        return;
+      }
+      if (Date.now() - startedAt < 60000) setTimeout(checkConnection, 3000);
+    };
+    setTimeout(checkConnection, 3000);
   }
 
   async saveTelegram() {

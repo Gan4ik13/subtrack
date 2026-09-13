@@ -15,7 +15,7 @@ def send_telegram(chat_id: str, text: str) -> bool:
     try:
         resp = requests.post(
             url,
-            json={"chat_id": chat_id, "text": text, "disable_web_page_preview": True},
+            json={"chat_id": chat_id, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True},
             timeout=20,
         )
         return resp.status_code == 200 and resp.json().get("ok", False)
