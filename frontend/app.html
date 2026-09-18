@@ -92,6 +92,41 @@
   input[type="range"]{ -webkit-appearance:none; appearance:none; height:8px; border-radius:4px; background:var(--surface-2); outline:none; }
   input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:20px; height:20px; border-radius:50%; background:var(--accent); cursor:pointer; border:2px solid var(--bg); box-shadow:0 1px 4px rgba(0,0,0,.3); }
   input[type="range"]::-moz-range-thumb{ width:20px; height:20px; border-radius:50%; background:var(--accent); cursor:pointer; border:2px solid var(--bg); box-shadow:0 1px 4px rgba(0,0,0,.3); }
+
+  /* === Игра: кнопка с бейджем «Топ-10» === */
+  .game-top-wrap{ position:relative; }
+  .game-top-btn{
+    background:linear-gradient(135deg,var(--accent),#a855f7);
+    color:#fff; border:1px solid rgba(255,255,255,.14);
+    animation:gamePulse 2.4s ease-in-out infinite;
+    transition:transform .15s ease;
+  }
+  .game-top-btn:hover{ transform:scale(1.1); animation:none; }
+  .game-top-btn:active{ transform:scale(.95); }
+  @keyframes gamePulse{
+    0%,100%{ box-shadow:0 0 0 1px rgba(99,102,241,.45), 0 0 12px rgba(99,102,241,.4); }
+    50%{ box-shadow:0 0 0 1px rgba(99,102,241,.7), 0 0 26px rgba(99,102,241,.75); }
+  }
+  .game-top-badge{
+    position:absolute; top:-7px; right:-12px; z-index:2;
+    font-size:8.5px; font-weight:800; letter-spacing:.03em; line-height:1;
+    color:#0b0c10; background:linear-gradient(135deg,#fbbf24,#f59e0b);
+    padding:3px 6px; border-radius:999px; white-space:nowrap;
+    box-shadow:0 0 10px rgba(245,158,11,.6);
+    animation:badgePop 2.4s ease-in-out infinite;
+  }
+  @keyframes badgePop{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-1px) scale(1.06); } }
+
+  /* === Игра: таблица «Топ-10» в попапе === */
+  .game-lb-list{ max-height:180px; overflow-y:auto; }
+  .game-lb-row{ display:flex; align-items:center; gap:10px; padding:6px 8px; border-radius:10px; }
+  .game-lb-row:nth-child(-n+3){ background:rgba(245,158,11,.08); }
+  .game-lb-rank{ width:20px; text-align:center; font-weight:800; font-size:12px; flex-shrink:0; }
+  .game-lb-rank.gold{ color:#fbbf24; }
+  .game-lb-rank.silver{ color:#cbd5e1; }
+  .game-lb-rank.bronze{ color:#f59e0b; }
+  .game-lb-row .lb-name{ flex:1; min-width:0; font-size:12px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .game-lb-row .lb-score{ font-size:12px; font-weight:700; color:var(--accent-400); white-space:nowrap; }
 </style>
 <script>
   /* Apply saved theme before first paint to avoid flash */
@@ -216,7 +251,8 @@
     <div id="game-prompt" class="game-prompt p-8 text-center">
       <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-accent/15 border border-accent/30 flex items-center justify-center text-3xl">✦</div>
       <p class="text-lg font-bold mb-2">Пять секунд на перезагрузку</p>
-      <p class="text-xs text-[var(--text-secondary)] max-w-xs mx-auto mb-6">Поймай отменённые подписки и заработай виртуальную экономию. Данные аккаунта не используются.</p>
+      <p class="text-xs text-[var(--text-secondary)] max-w-xs mx-auto mb-4">Поймай отменённые подписки и заработай виртуальную экономию. Данные аккаунта не используются.</p>
+      <p class="text-xs font-bold text-warning mb-5 flex items-center justify-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 01-10 0V4z" stroke="#eab308" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 6H4a2 2 0 002 4h3M17 6h3a2 2 0 01-2 4h-3" stroke="#eab308" stroke-width="1.8" stroke-linecap="round"/></svg>Лучшие результаты попадают в <b>Топ-10 игроков</b> — таблица ниже</p>
       <div class="flex gap-2 justify-center"><button type="button" id="game-start" class="bg-accent hover:bg-accent-hover text-white text-sm font-semibold rounded-xl px-5 py-2.5">Сыграть</button><button type="button" id="game-no" class="border border-border hover:border-accent/50 text-sm font-semibold rounded-xl px-5 py-2.5">Нет, спасибо</button></div>
     </div>
     <div id="game-board" class="hidden p-4 sm:p-6">
@@ -224,8 +260,8 @@
       <canvas id="game-canvas" class="game-canvas" width="760" height="520" aria-label="Мини-игра SubPing"></canvas>
       <p class="text-[10px] text-[var(--text-muted)] text-center mt-3">← → или проведи пальцем по полю</p>
     </div>
-    <div id="game-result" class="hidden p-8 text-center"><p class="text-2xl font-bold mb-2">Неплохо!</p><p id="game-result-text" class="text-xs text-[var(--text-secondary)] mb-4"></p><div class="flex gap-2 max-w-sm mx-auto mb-3"><input id="game-player-name" maxlength="20" placeholder="Твоё имя в таблице" class="min-w-0 flex-1 rounded-xl px-3 py-2.5 text-sm"><button type="button" id="game-submit" class="bg-accent hover:bg-accent-hover text-white text-xs font-semibold rounded-xl px-3">В топ</button></div><button type="button" id="game-replay" class="border border-border hover:border-accent/50 text-sm font-semibold rounded-xl px-5 py-2.5">Ещё раз</button></div>
-    <div id="game-leaderboard" class="border-t border-border px-5 py-4"><div class="flex items-center justify-between mb-3"><p class="text-xs font-bold">Топ-10 игроков</p><span class="text-[10px] text-[var(--text-muted)]">виртуальная экономия</span></div><div id="game-leaderboard-list" class="flex flex-col gap-1.5"><p class="text-[11px] text-[var(--text-muted)]">Загрузка рекордов…</p></div></div>
+    <div id="game-result" class="hidden p-8 text-center"><p class="text-2xl font-bold mb-2">Неплохо!</p><p id="game-result-text" class="text-xs text-[var(--text-secondary)] mb-4"></p><div class="flex gap-2 max-w-sm mx-auto mb-3"><input id="game-player-name" maxlength="20" placeholder="Твоё имя в таблице" class="min-w-0 flex-1 rounded-xl px-3 py-2.5 text-sm"><button type="button" id="game-submit" class="bg-accent hover:bg-accent-hover text-white text-xs font-semibold rounded-xl px-3">В топ</button></div><button type="button" id="game-replay" class="border border-border hover:border-accent/50 text-sm font-semibold rounded-xl px-5 py-2.5">Ещё раз</button><button type="button" id="game-to-subs" class="mt-4 text-xs font-semibold text-accent hover:text-accent-400 transition-colors flex items-center justify-center gap-1.5 mx-auto">Настоящая экономия начинается с отмены подписок — начни список <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+    <div id="game-leaderboard" class="border-t border-border px-5 py-4"><div class="flex items-center justify-between mb-3"><p class="text-xs font-bold flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 01-10 0V4z" stroke="url(#lbGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 6H4a2 2 0 002 4h3M17 6h3a2 2 0 01-2 4h-3" stroke="url(#lbGrad)" stroke-width="1.8" stroke-linecap="round"/><defs><linearGradient id="lbGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs></svg>Топ-10 игроков</p><span class="text-[10px] text-[var(--text-muted)]">виртуальная экономия</span></div><div id="game-leaderboard-list" class="game-lb-list flex flex-col gap-1.5"><p class="text-[11px] text-[var(--text-muted)]">Загрузка рекордов…</p></div></div>
   </div>
 </div>
 
@@ -250,7 +286,10 @@
           <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="#9497a8" stroke-width="1.7"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/></svg>
           <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" stroke="#9497a8" stroke-width="1.7" stroke-linejoin="round"/></svg>
         </button>
-        <button type="button" id="game-open" title="Мини-игра" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Открыть мини-игру">✦</button>
+        <div class="game-top-wrap">
+          <button type="button" id="game-open" title="Мини-игра: попади в Топ-10" class="game-top-btn w-9 h-9 rounded-full flex items-center justify-center" aria-label="Открыть мини-игру: попади в Топ-10">✦</button>
+          <span class="game-top-badge">Топ-10</span>
+        </div>
         <button type="button" data-doc="how" title="Как это работает" class="w-9 h-9 rounded-full bg-surface-2 border border-border flex items-center justify-center hover:border-accent/50 transition-colors" aria-label="Как это работает">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#9497a8" stroke-width="1.7"/><path d="M9.5 9a2.5 2.5 0 114.9.8c-.5 1-1.9 1.5-1.9 2.7" stroke="#9497a8" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="#9497a8"/></svg>
         </button>
@@ -1009,6 +1048,7 @@ class App {
     document.getElementById('game-start')?.addEventListener('click', () => this.startGame());
     document.getElementById('game-replay')?.addEventListener('click', () => this.startGame());
     document.getElementById('game-submit')?.addEventListener('click', () => this.submitGameScore());
+    document.getElementById('game-to-subs')?.addEventListener('click', () => { this.closeGame(); this.openSubModal(); });
     document.getElementById('game-modal')?.addEventListener('click', e => { if (e.target.id === 'game-modal') this.closeGame(); });
 
     document.querySelectorAll('[data-dash-tab]').forEach(btn => {
@@ -1533,8 +1573,11 @@ class App {
 
   renderLeaderboard(scores) {
     const list = document.getElementById('game-leaderboard-list');
-    if (!scores.length) { list.innerHTML = '<p class="text-[11px] text-[var(--text-muted)]">Пока пусто. Стань первым!</p>'; return; }
-    list.innerHTML = scores.map((row, i) => `<div class="flex items-center gap-2 text-xs"><span class="w-5 text-center font-bold ${i < 3 ? 'text-warning' : 'text-[var(--text-muted)]'}">${i + 1}</span><span class="flex-1 truncate">${this.escapeHtml(row.player_name)}</span><b class="text-accent-400">${this.formatNumber(row.score)} ₽</b></div>`).join('');
+    const rankClass = ['gold', 'silver', 'bronze'];
+    if (!scores.length) { list.innerHTML = '<p class="text-[11px] text-[var(--text-muted)] text-center py-3">Пока пусто. Сыграй и стань первым в Топ-10!</p>'; return; }
+    list.innerHTML = scores.map((row, i) => {
+      return `<div class="game-lb-row"><span class="game-lb-rank ${rankClass[i] || 'text-[var(--text-muted)]'}">${i + 1}</span><span class="lb-name">${this.escapeHtml(row.player_name)}</span><span class="lb-score">${this.formatNumber(row.score)} ₽</span></div>`;
+    }).join('');
   }
 
   async loadLeaderboard() {
