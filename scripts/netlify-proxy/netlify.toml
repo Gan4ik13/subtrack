@@ -1,8 +1,8 @@
-[functions]
-  node_bundler = "esbuild"
-
-# Все пути — на функцию-прокси (status 200 = внутренняя переадресация без смены URL)
+# Прокси через edge-rewrite Netlify: любой путь проксируется на Render
+# официальной функцией proxy-redirect (status 200 = внутренняя перезапись).
+# Серверные функции не нужны (raw zip-деплой их не обрабатывает).
 [[redirects]]
   from = "/*"
-  to = "/.netlify/functions/proxy/:splat"
+  to = "https://subtrack-api-jszq.onrender.com/:splat"
   status = 200
+  force = true

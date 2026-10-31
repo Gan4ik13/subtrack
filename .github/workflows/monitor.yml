@@ -25,8 +25,8 @@ jobs:
             fail="${fail}
           - backend direct: HTTP $code (ожидался 401)"
           fi
-          code2=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://subping-api.ccfys7r8g7.workers.dev/health)
-          echo "worker /health: HTTP $code2"
+          code2=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://subping-proxy.netlify.app/health)
+          echo "RF-путь (netlify proxy): HTTP $code2"
           if [ "$code2" != "200" ]; then
             fail="${fail}
           - RF-путь (CF Worker): HTTP $code2 (ожидался 200)"
