@@ -1,0 +1,8 @@
+[functions]
+  node_bundler = "esbuild"
+
+# Все пути — на функцию-прокси (status 200 = внутренняя переадресация без смены URL)
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/proxy/:splat"
+  status = 200
