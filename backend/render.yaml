@@ -9,12 +9,22 @@ services:
     healthCheckPath: /health
     envVars:
       - key: PAYMENT_MODE
-        value: yoomoney
+        value: yookassa
       - key: PRICE_RUB
         value: "99"
+      - key: YOOKASSA_VAT_CODE
+        value: "1"
+      - key: YOOKASSA_SHOP_ID
+        sync: false
+      - key: YOOKASSA_SECRET_KEY
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: TG_BOT_TOKEN
+        sync: false
+      - key: OWNER_TG_CHAT_ID
+        sync: false
+      - key: OWNER_EMAIL
         sync: false
       - key: FRONTEND_ORIGIN
         sync: false
