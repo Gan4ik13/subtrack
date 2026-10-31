@@ -9,5 +9,12 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping API
-        run: curl -s -o /dev/null -w "%{http_code}" https://subtrack-api-jszq.onrender.com/api/me
+      # /api/me без токена должен вернуть 401; иной код (404/503/000) — сервис лежит.
+      - name: Ping API (expect 401)
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://subtrack-api-jszq.onrender.com/api/me)
+          echo "HTTP $code"
+          if [ "$code" != "401" ]; then
+            echo "::error ::SubPing API не отвечает как ожидается (HTTP $code)"
+            exit 1
+          fi
