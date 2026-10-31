@@ -1,14 +1,23 @@
 import os
-import sys
+import random
+import tempfile
 
-if "DATABASE_URL" in os.environ:
-    import db
-    db.init_db()
+# Герметичный прогон: изолированная SQLite-БД и ручной режим оплаты
+# (не дёргает ЮKassa/ЮMoney и не зависит от окружения).
+EMAIL = f"pgtest{random.randint(10000, 99999)}@example.com"
+OTHER_EMAIL = f"other{random.randint(10000, 99999)}@example.com"
 
-os.environ.setdefault("OWNER_EMAIL", "pgtest@example.com")
+os.environ["PAYMENT_MODE"] = "manual"
+os.environ["OWNER_EMAIL"] = EMAIL
+os.environ["SUBTRAK_DB"] = os.path.join(
+    tempfile.gettempdir(), f"subtrack_test_api_{os.getpid()}_{random.randint(1000, 9999)}.db"
+)
 
 from fastapi.testclient import TestClient
+import db
 import main as app_module
+
+db.init_db()
 
 client = TestClient(app_module.app)
 
@@ -27,19 +36,19 @@ def call(method, path, body=None, token=None, expect=200):
 
 print("health:", call("GET", "/health"))
 
-t1 = call("POST", "/api/auth/register", {"email": "pgtest@example.com", "password": "pass123"})
+t1 = call("POST", "/api/auth/register", {"email": EMAIL, "password": "pass123"})
 token = t1["token"]
 print("register ok")
 
-call("POST", "/api/auth/register", {"email": "pgtest@example.com", "password": "pass123"})
+call("POST", "/api/auth/register", {"email": EMAIL, "password": "pass123"})
 print("duplicate register logs in ok")
-call("POST", "/api/auth/register", {"email": "pgtest@example.com", "password": "different"}, expect=409)
+call("POST", "/api/auth/register", {"email": EMAIL, "password": "different"}, expect=409)
 print("wrong-password register rejected ok")
 
-call("POST", "/api/auth/login", {"email": "pgtest@example.com", "password": "wrong"}, expect=401)
+call("POST", "/api/auth/login", {"email": EMAIL, "password": "wrong"}, expect=401)
 print("bad login rejected ok")
 
-t2 = call("POST", "/api/auth/login", {"email": "pgtest@example.com", "password": "pass123"})
+t2 = call("POST", "/api/auth/login", {"email": EMAIL, "password": "pass123"})
 token2 = t2["token"]
 print("login ok")
 
@@ -52,7 +61,7 @@ print("me ok")
 call("GET", "/api/admin/payments", token=token, expect=200)
 print("owner payments ok")
 
-t3 = call("POST", "/api/auth/register", {"email": "other@example.com", "password": "pass123"})
+t3 = call("POST", "/api/auth/register", {"email": OTHER_EMAIL, "password": "pass123"})
 tok3 = t3["token"]
 me3 = call("GET", "/api/me", token=tok3)
 assert me3["is_owner"] is False
@@ -79,7 +88,7 @@ me = call("GET", "/api/me", token=token)
 assert me["premium"] is True
 call("POST", "/api/subscriptions", {"name": "D", "amount": 1, "period": "monthly", "next_date": "2026-09-01"}, token=token)
 admin = call("GET", "/api/admin/payments", token=token)
-assert any(x["email"] == "pgtest@example.com" and x["status"] == "paid" for x in admin["payments"]), admin["payments"]
+assert any(x["email"] == EMAIL and x["status"] == "paid" for x in admin["payments"]), admin["payments"]
 print("premium + unlimited ok")
 
 call("PUT", "/api/settings/telegram", {"telegram_chat_id": "123456"}, token=token)

@@ -13,8 +13,11 @@ os.environ["PAYMENT_MODE"] = "yookassa"
 os.environ["YOOKASSA_SHOP_ID"] = "123456"
 os.environ["YOOKASSA_SECRET_KEY"] = "test_secret_key"
 os.environ["FRONTEND_ORIGIN"] = "https://gan4ik13.github.io"
-if "DATABASE_URL" not in os.environ:
-    os.environ["SUBTRAK_DB"] = os.path.join(tempfile.gettempdir(), f"subtrack_test_yookassa_{os.getpid()}.db")
+# Герметичный прогон: всегда изолированная SQLite-БД, даже если в окружении
+# задан DATABASE_URL (иначе тест пишет в постоянную БД и хватает «хвосты» прошлых прогонов).
+os.environ["SUBTRAK_DB"] = os.path.join(
+    tempfile.gettempdir(), f"subtrack_test_yookassa_{os.getpid()}_{random.randint(1000, 9999)}.db"
+)
 
 import payments as pay
 from db import db as db_ctx
@@ -40,7 +43,7 @@ class FakeResp:
 _real_post = pay.requests.post
 _real_get = pay.requests.get
 CAPTURED_CREATE_BODY = {}
-FAKE_EXTERNAL = "yk_2b18f3b4-0000-0000-0000-000000000001"
+FAKE_EXTERNAL = "yk_" + "".join(random.choice("0123456789abcdef") for _ in range(32))
 
 
 def fake_post(url, headers=None, json=None, timeout=None, **kw):
