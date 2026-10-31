@@ -2,9 +2,9 @@ name: E2E Payment Invoice
 
 # Полный прогон оплаты без участия фронта (GitHub-раннер видит Render напрямую,
 # обходя блокировки РФ и сломанный CF Worker):
-#   1) регистрирует тестового пользователя
-#   2) создаёт настоящий счёт в ЮKassa (live-режим, 99 ₽)
-#   3) ждёт оплаты до 45 минут, опрашивая статус
+#   job invoice: регистрирует тестового пользователя и выставляет счёт в ЮKassa
+#                (live-режим, 99 ₽) — завершается за секунды, ссылка в логе и outputs
+#   job wait:    ждёт оплату до 45 минут, опрашивая статус
 # Запуск: Actions → E2E Payment Invoice → Run workflow.
 # Счёт выставляется в боевом магазине: неоплаченный счёт просто протухает.
 
@@ -14,8 +14,13 @@ on:
 jobs:
   invoice:
     runs-on: ubuntu-latest
+    outputs:
+      pay_url: ${{ steps.make.outputs.pay_url }}
+      payment_id: ${{ steps.make.outputs.payment_id }}
+      token: ${{ steps.make.outputs.token }}
     steps:
-      - name: Create invoice and wait for payment
+      - name: Create invoice
+        id: make
         run: |
           set -euo pipefail
           API=https://subtrack-api-jszq.onrender.com
@@ -28,16 +33,25 @@ jobs:
           echo "create response: $RESP"
           PAY_URL=$(echo "$RESP" | python3 -c "import sys,json;print(json.load(sys.stdin)['pay_url'])")
           PID=$(echo "$RESP" | python3 -c "import sys,json;print(json.load(sys.stdin)['payment_id'])")
-          echo ""
-          echo "========================================"
-          echo "PAY_URL: $PAY_URL"
-          echo "PAYMENT_ID: $PID"
-          echo "========================================"
-          echo "Оплатите ссылку банковской картой (99 ₽ придут вам же в магазин)."
-          echo "Жду оплату до 45 минут..."
+          echo "PAYMENT_ID=$PID"
+          echo "PAY_URL=$PAY_URL"
+          echo "pay_url=$PAY_URL" >> "$GITHUB_OUTPUT"
+          echo "payment_id=$PID" >> "$GITHUB_OUTPUT"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+  wait:
+    runs-on: ubuntu-latest
+    needs: invoice
+    steps:
+      - name: Wait for payment and verify Premium
+        run: |
+          set -euo pipefail
+          API=https://subtrack-api-jszq.onrender.com
+          echo "Ожидание оплаты счёта ${{ needs.invoice.outputs.payment_id }}"
+          echo "Ссылка для оплаты: ${{ needs.invoice.outputs.pay_url }}"
           for i in $(seq 1 45); do
             sleep 60
-            ST=$(curl -s -H "Authorization: Bearer $TOKEN" "$API/api/payment/status/$PID")
+            ST=$(curl -s -H "Authorization: Bearer ${{ needs.invoice.outputs.token }}" "$API/api/payment/status/${{ needs.invoice.outputs.payment_id }}")
             echo "poll $i: $ST"
             if echo "$ST" | grep -q '"premium": *true'; then
               echo "E2E SUCCESS: Premium активирован через $i мин"
