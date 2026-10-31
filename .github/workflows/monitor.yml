@@ -1,0 +1,47 @@
+name: SubPing Monitor
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      # Два независимых пути: прямой (здоровье бэкенда) и через CF Worker
+      # (здоровье пути для клиентов из РФ). Падает и шлёт алерт в Telegram,
+      # если ломается любой из них.
+      - name: Check backend and RF-path
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          OWNER_TG_CHAT_ID: ${{ secrets.OWNER_TG_CHAT_ID }}
+        run: |
+          set -u
+          fail=""
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://subtrack-api-jszq.onrender.com/api/me)
+          echo "direct /api/me: HTTP $code"
+          if [ "$code" != "401" ]; then
+            fail="${fail}
+          - backend direct: HTTP $code (ожидался 401)"
+          fi
+          code2=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://subping-api.ccfys7r8g7.workers.dev/health)
+          echo "worker /health: HTTP $code2"
+          if [ "$code2" != "200" ]; then
+            fail="${fail}
+          - RF-путь (CF Worker): HTTP $code2 (ожидался 200)"
+          fi
+          if [ -n "$fail" ]; then
+            msg="SubPing мониторинг: проблемы ($(date -u '+%d.%m %H:%M') UTC):${fail}
+          Проверь: Render dashboard / worker."
+            echo "$msg"
+            if [ -n "$TG_BOT_TOKEN" ] && [ -n "$OWNER_TG_CHAT_ID" ]; then
+              curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+                --data-urlencode "chat_id=${OWNER_TG_CHAT_ID}" \
+                --data-urlencode "text=$msg" > /dev/null && echo "alert sent"
+            else
+              echo "Секреты TG_BOT_TOKEN / OWNER_TG_CHAT_ID не заданы — алерт не отправлен."
+            fi
+            exit 1
+          fi
+          echo "OK: оба пути здоровы"

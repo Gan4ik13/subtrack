@@ -1,0 +1,48 @@
+name: E2E Payment Invoice
+
+# Полный прогон оплаты без участия фронта (GitHub-раннер видит Render напрямую,
+# обходя блокировки РФ и сломанный CF Worker):
+#   1) регистрирует тестового пользователя
+#   2) создаёт настоящий счёт в ЮKassa (live-режим, 99 ₽)
+#   3) ждёт оплаты до 45 минут, опрашивая статус
+# Запуск: Actions → E2E Payment Invoice → Run workflow.
+# Счёт выставляется в боевом магазине: неоплаченный счёт просто протухает.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  invoice:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create invoice and wait for payment
+        run: |
+          set -euo pipefail
+          API=https://subtrack-api-jszq.onrender.com
+          EMAIL="e2e-$(date +%s)@subping.ru"
+          echo "registering $EMAIL"
+          TOKEN=$(curl -s -X POST "$API/api/auth/register" -H 'Content-Type: application/json' \
+            -d "{\"email\":\"$EMAIL\",\"password\":\"e2e-pass-123\"}" | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
+          RESP=$(curl -s -X POST "$API/api/payment/create" -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' -d '{"tier":"monthly"}')
+          echo "create response: $RESP"
+          PAY_URL=$(echo "$RESP" | python3 -c "import sys,json;print(json.load(sys.stdin)['pay_url'])")
+          PID=$(echo "$RESP" | python3 -c "import sys,json;print(json.load(sys.stdin)['payment_id'])")
+          echo ""
+          echo "========================================"
+          echo "PAY_URL: $PAY_URL"
+          echo "PAYMENT_ID: $PID"
+          echo "========================================"
+          echo "Оплатите ссылку банковской картой (99 ₽ придут вам же в магазин)."
+          echo "Жду оплату до 45 минут..."
+          for i in $(seq 1 45); do
+            sleep 60
+            ST=$(curl -s -H "Authorization: Bearer $TOKEN" "$API/api/payment/status/$PID")
+            echo "poll $i: $ST"
+            if echo "$ST" | grep -q '"premium": *true'; then
+              echo "E2E SUCCESS: Premium активирован через $i мин"
+              exit 0
+            fi
+          done
+          echo "Счёт не оплачен за 45 минут"
+          exit 1
