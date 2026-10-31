@@ -4,3 +4,4 @@ __pycache__/
 *.db
 .DS_Store
 scripts/render_env.json
+backend/.env

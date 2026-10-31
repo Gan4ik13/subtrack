@@ -642,7 +642,7 @@ async function loadTunnelBase() {
   try {
     const r = await fetch('./tunnel.txt', { cache: 'no-cache' });
     const t = (await r.text()).trim();
-    if (/^https:\/\/[a-z0-9.-]+\.(?:ts\.net|trycloudflare\.com|vercel\.app)$/.test(t) && !API_BASES.includes(t)) API_BASES.push(t);
+    if (/^https:\/\/[a-z0-9.-]+\.(?:ts\.net|trycloudflare\.com|vercel\.app|workers\.dev)$/.test(t) && !API_BASES.includes(t)) API_BASES.push(t);
   } catch (e) {}
 }
 

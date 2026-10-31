@@ -72,7 +72,7 @@ pay.requests.post = fake_post
 pay.requests.get = fake_get
 
 # 1) build_payment_url возвращает confirmation_url и проставляет external_id
-payment = {"id": "payyyyy", "comment": "subtrack-1-payyyyy", "amount": 15.0}
+payment = {"id": "payyyyy", "comment": "subtrack-1-payyyyy|SubPing Premium (1 месяц)", "amount": 15.0}
 url = pay.build_payment_url(payment, base_url="http://testserver", customer_email="buyer@example.com")
 print("pay_url:", url)
 assert url == "https://yookassa.ru/pay/" + FAKE_EXTERNAL
@@ -83,11 +83,11 @@ assert body["amount"] == {"value": "15.00", "currency": "RUB"}
 assert body["capture"] is True
 assert body["confirmation"]["type"] == "redirect"
 assert body["receipt"]["customer"]["email"] == "buyer@example.com"
-assert body["receipt"]["items"][0]["description"] == "SubPing Premium (1 месяц)"
-assert body["receipt"]["items"][0]["vat_code"] == "1"
+assert body["receipt"]["items"][0]["description"].endswith("SubPing Premium (1 месяц)")
+assert body["receipt"]["items"][0]["vat_code"] == 1
 hdr = CAPTURED_CREATE_BODY["headers"]
 assert hdr["Authorization"].startswith("Basic ")
-assert hdr.get("Idempotency-Key")
+assert hdr.get("Idempotence-Key")
 print("create payment + receipt ok")
 
 # 2) check_payment по external_id
