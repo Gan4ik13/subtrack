@@ -11,6 +11,7 @@
 <meta property="og:description" content="Учитывайте подписки, следите за списаниями и получайте напоминания в Telegram. Бесплатно до 3 подписок, Premium от 99 ₽/мес.">
 <meta property="og:url" content="https://subping.ru/">
 <meta property="og:image" content="https://subping.ru/og-image.png">
+<meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
@@ -231,10 +232,9 @@
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z" stroke="#eab308" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
     <p class="text-base font-bold mb-2">5 подписок, которые вы точно забыли отменить</p>
-    <p class="text-xs text-[var(--text-secondary)] mb-4">Получите чек-лист с самыми «невидимыми» списаниями + советы по экономии.</p>
+    <p class="text-xs text-[var(--text-secondary)] mb-4">Чек-лист с самыми «невидимыми» списаниями и советами по экономии — в нашем Telegram-канале.</p>
     <div class="flex flex-col gap-2">
-      <input type="email" id="exit-popup-email" placeholder="Ваш email" class="w-full rounded-xl px-3.5 py-2.5 text-sm">
-      <button type="button" id="exit-popup-submit" class="bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5">Получить чек-лист</button>
+      <a href="https://t.me/SubPingChanal" target="_blank" rel="noopener" id="exit-popup-submit" class="bg-accent hover:bg-accent-hover transition-colors text-white text-sm font-semibold rounded-xl py-2.5 text-center">Получить чек-лист в Telegram</a>
       <button type="button" id="exit-popup-later" class="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">Нет, спасибо</button>
     </div>
   </div>
@@ -675,11 +675,11 @@ const DOCS = {
       <p class="mt-2">2.4. Услуги оказываются дистанционно через сеть Интернет в электронном виде, без передачи материального носителя.</p>
 
       <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">3. Стоимость услуг</h4>
-      <p>3.1. Стоимость тарифа Premium — 15 (пятнадцать) рублей за 1 (один) месяц.</p>
+      <p>3.1. Стоимость тарифа Premium: 99 (девяносто девять) рублей за 1 (один) месяц, 499 (четыреста девяносто девять) рублей за 1 (один) год или 799 (семьсот девяносто девять) рублей единоразово за бессрочный доступ.</p>
       <p class="mt-2">3.2. Исполнитель вправе изменить стоимость услуг в одностороннем порядке с предварительным информированием Пользователей. Оплаченный по действующим ценам период не изменяется.</p>
 
       <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">4. Порядок оплаты и активации</h4>
-      <p>4.1. Оплата производится через платёжный сервис ЮKassa (банковские карты, СБП, кошелёк ЮMoney) либо иными способами, указанными на сайте.</p>
+      <p>4.1. Оплата производится переводом через сервис ЮMoney (с кошелька ЮMoney или банковской карты) либо иными способами, указанными на сайте.</p>
       <p class="mt-2">4.2. Датой акцепта оферты считается дата поступления денежных средств на счёт Исполнителя.</p>
       <p class="mt-2">4.3. Доступ к тарифу Premium активируется автоматически после поступления оплаты в течение нескольких минут. Срок действия отсчитывается с момента активации.</p>
 
@@ -689,7 +689,7 @@ const DOCS = {
       <p class="mt-2">5.3. Пользователь несёт ответственность за сохранность учётных данных своего аккаунта.</p>
 
       <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">6. Персональные данные</h4>
-      <p>6.1. Персональные данные (email) обрабатываются для предоставления услуг. Оплата обрабатывается платёжным сервисом ЮKassa в соответствии с его правилами.</p>
+      <p>6.1. Персональные данные (email) обрабатываются для предоставления услуг. Оплата осуществляется через сервис ЮMoney в соответствии с его правилами.</p>
       <p class="mt-2">6.2. Совершая акцепт оферты, Пользователь соглашается с обработкой своих персональных данных.</p>
 
       <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">7. Возврат средств</h4>
@@ -731,7 +731,7 @@ const DOCS = {
     title: 'Оплата и получение услуги',
     html: `
       <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mb-1.5">Способы оплаты</h4>
-      <p>Оплата производится через платёжный сервис ЮKassa: банковские карты (Мир, Visa, Mastercard), СБП и кошелёк ЮMoney. После оплаты вы получите электронный чек на указанный email.</p>
+      <p>Оплата производится переводом через сервис ЮMoney — с кошелька ЮMoney или банковской карты. Чек самозанятого вышлем на email по запросу.</p>
       <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">Стоимость</h4>
       <p>Тариф Premium — <b class="text-[var(--text-primary)]">99 ₽/мес, 499 ₽/год (-58%) или 799 ₽ навсегда</b>. Бесплатный тариф — 0 ₽ (до 3 подписок).</p>
       <h4 class="text-[13px] font-semibold text-[var(--text-primary)] mt-4 mb-1.5">Порядок получения услуги</h4>
@@ -770,7 +770,7 @@ const DOCS = {
             <li class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-accent shrink-0"></span>Экспорт в CSV</li>
           </ul>
         </div>
-        <p class="text-[11px] text-[var(--text-muted)]">Оплата через ЮKassa (карты, СБП, ЮMoney). Услуга активируется автоматически после оплаты. <a href="offer.html" class="text-accent-400 underline">Публичная оферта</a>.</p>
+        <p class="text-[11px] text-[var(--text-muted)]">Оплата через ЮMoney (кошелёк или банковская карта). Услуга активируется автоматически после оплаты. <a href="offer.html" class="text-accent-400 underline">Публичная оферта</a>.</p>
       </div>`
   },
   requisites: {
@@ -1159,8 +1159,6 @@ class App {
       document.getElementById('exit-popup-close')?.addEventListener('click', () => { document.getElementById('exit-popup').classList.add('hidden'); document.getElementById('exit-popup').classList.remove('flex'); localStorage.setItem('subping_exit_seen', '1'); });
       document.getElementById('exit-popup-later')?.addEventListener('click', () => { document.getElementById('exit-popup').classList.add('hidden'); document.getElementById('exit-popup').classList.remove('flex'); localStorage.setItem('subping_exit_seen', '1'); });
       document.getElementById('exit-popup-submit')?.addEventListener('click', () => {
-        const email = document.getElementById('exit-popup-email')?.value;
-        if (email) { this.toast('Спасибо! Чек-лист отправлен на ' + email, 'success'); }
         document.getElementById('exit-popup').classList.add('hidden');
         document.getElementById('exit-popup').classList.remove('flex');
         localStorage.setItem('subping_exit_seen', '1');

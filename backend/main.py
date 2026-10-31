@@ -410,7 +410,8 @@ def payment_status(pid: str, user: dict = Depends(current_user)):
     if paid:
         with db() as conn:
             user = conn.execute("SELECT * FROM users WHERE id=?", (p["user_id"],)).fetchone()
-            activate_premium(conn, p["user_id"])
+            tier = _extract_tier_from_comment(p.get("comment", ""))
+            activate_premium_tier(conn, p["user_id"], tier)
             conn.execute(
                 "UPDATE payments SET status='paid', verified_at=? WHERE id=?",
                 (now_iso(), pid),

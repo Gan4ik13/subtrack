@@ -123,6 +123,7 @@ def build_payment_form_html(payment) -> str:
     Форма уходит на https://yoomoney.ru/quickpay/confirm. Используем GET:
     POST с чужого Referer ЮMoney игнорирует (таймаут), а GET-переход
     проверенно открывает страницу подтверждения.
+    paymentType=PC — оплата с кошелька ЮMoney, AC — с банковской карты.
     """
     label = payment["comment"][:64]
     amount = f"{payment['amount']:.2f}"
@@ -132,18 +133,19 @@ def build_payment_form_html(payment) -> str:
     def esc(s: str) -> str:
         return s.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;")
 
-    def hidden(name: str, value: str) -> str:
-        return f'<input type="hidden" name="{name}" value="{esc(value)}"/>'
+    def inputs(payment_type: str) -> str:
+        fields = [
+            ("receiver", WALLET_ID),
+            ("quickpay-form", "button"),
+            ("paymentType", payment_type),
+            ("sum", amount),
+            ("label", label),
+            ("successURL", success),
+        ]
+        return "".join(f'<input type="hidden" name="{n}" value="{esc(v)}"/>' for n, v in fields)
 
-    fields = [
-        ("receiver", WALLET_ID),
-        ("quickpay-form", "button"),
-        ("paymentType", "PC"),
-        ("sum", amount),
-        ("label", label),
-        ("successURL", success),
-    ]
-    inputs = "".join(hidden(n, v) for n, v in fields)
+    wallet_inputs = inputs("PC")
+    card_inputs = inputs("AC")
 
     return f"""<!DOCTYPE html>
 <html lang="ru">
@@ -160,26 +162,28 @@ def build_payment_form_html(payment) -> str:
   h1 {{ font-size:18px; margin:0 0 8px; }}
   p {{ font-size:13px; color:#9ca3af; margin:0 0 20px; }}
   .price {{ font-size:28px; font-weight:700; color:#818cf8; margin-bottom:20px; }}
-  form button {{ width:100%; background:#818cf8; border:0; border-radius:10px;
-        color:#fff; font-size:15px; font-weight:600; padding:13px; cursor:pointer; }}
-  form button:hover {{ background:#6d7bf7; }}
+  form button {{ width:100%; border:0; border-radius:10px;
+        font-size:15px; font-weight:600; padding:13px; cursor:pointer; margin-bottom:10px; }}
+  .btn-primary {{ background:#818cf8; color:#fff; }}
+  .btn-primary:hover {{ background:#6d7bf7; }}
+  .btn-secondary {{ background:transparent; color:#9ca3af; border:1px solid #2a3352; }}
+  .btn-secondary:hover {{ border-color:#818cf8; color:#e5e7eb; }}
 </style>
 </head>
 <body>
   <div class="card">
     <h1>Оплата подписки SubPing</h1>
     <div class="price">{amount} &#8381;</div>
-    <p>Сейчас вы перейдёте на страницу ЮMoney для подтверждения перевода.</p>
-    <form id="payform" method="GET" action="https://yoomoney.ru/quickpay/confirm">
-      {inputs}
-      <button type="submit">Перейти к оплате</button>
+    <p>Выберите способ оплаты — вы перейдёте на страницу ЮMoney для подтверждения перевода.</p>
+    <form method="GET" action="https://yoomoney.ru/quickpay/confirm">
+      {wallet_inputs}
+      <button type="submit" class="btn-primary">Оплатить с кошелька ЮMoney</button>
+    </form>
+    <form method="GET" action="https://yoomoney.ru/quickpay/confirm">
+      {card_inputs}
+      <button type="submit" class="btn-secondary">Оплатить банковской картой</button>
     </form>
   </div>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {{
-      document.getElementById('payform').submit();
-    }});
-  </script>
 </body>
 </html>"""
 
