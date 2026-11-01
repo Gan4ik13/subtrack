@@ -14,6 +14,12 @@ services:
         value: "99"
       - key: YOOKASSA_VAT_CODE
         value: "1"
+      - key: MYNALOG_INN
+        sync: false
+      - key: MYNALOG_PASSWORD
+        sync: false
+      - key: MYNALOG_PAYMENT_TYPE
+        value: "TRANSFER_OF_FUNDS"
       - key: YOOKASSA_SHOP_ID
         sync: false
       - key: YOOKASSA_SECRET_KEY

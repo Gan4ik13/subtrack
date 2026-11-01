@@ -13,6 +13,7 @@ from pydantic import BaseModel, EmailStr
 
 import auth as auth_util
 import bot
+import mynalog
 import notify
 import payments as pay
 from db import db, init_db, insert_get_id, now_iso, retry_db
@@ -274,12 +275,29 @@ def submit_game_score(body: GameScoreIn, authorization: str = Header(default="")
     return {"ok": True}
 
 
+def _issue_self_employed_receipt(user, p):
+    """Чек самозанятого в «Мой налог». Не должна ломать активацию Premium."""
+    if not mynalog.configured():
+        return None
+    label = (p.get("comment") or "").split("|", 1)[-1] or "SubPing Premium"
+    try:
+        return mynalog.create_income_receipt(
+            name=label,
+            amount=p["amount"],
+            customer_email=(user or {}).get("email", ""),
+        )
+    except Exception as e:
+        print(f"[mynalog] receipt failed for {p.get('id')}: {e}")
+        return {"error": str(e)}
+
+
 def _notify_payment(user, p, until: str) -> None:
     """Шлёт уведомления о подтверждённом платеже (после коммита транзакции)."""
     email = user["email"] if user else "?"
-    notify.send_owner_payment_notice(email, p["amount"], until, sender=(p.get("sender") or ""))
+    receipt = _issue_self_employed_receipt(user, p)
+    notify.send_owner_payment_notice(email, p["amount"], until, sender=(p.get("sender") or ""), receipt=receipt)
     if user and user.get("telegram_chat_id"):
-        notify.send_premium_confirmation(user["telegram_chat_id"], until)
+        notify.send_premium_confirmation(user["telegram_chat_id"], until, receipt=receipt)
 
 
 def _sub_payload(user, body: SubIn):

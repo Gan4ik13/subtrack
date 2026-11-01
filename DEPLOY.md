@@ -38,6 +38,9 @@ Env-переменные (Dashboard → subtrack-api → Environment):
 | `YOOKASSA_SHOP_ID` | shopId из кабинета ЮKassa |
 | `YOOKASSA_SECRET_KEY` | секретный ключ API ЮKassa |
 | `YOOKASSA_VAT_CODE` | `1` (НДС не облагается, самозанятый) |
+| `MYNALOG_INN` | ваш ИНН (772623564429) — чеки самозанятого |
+| `MYNALOG_PASSWORD` | пароль из lknpd.nalog.ru (включается в профиле ФНС) |
+| `MYNALOG_PAYMENT_TYPE` | `TRANSFER_OF_FUNDS` (безнал) |
 | `FRONTEND_ORIGIN` | `https://subping.ru` |
 | `TG_BOT_TOKEN` | токен бота (уже задан) |
 | `OWNER_TG_CHAT_ID` | chat ID для уведомлений об оплатах |

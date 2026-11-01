@@ -35,25 +35,33 @@ def send_charge_reminder(chat_id: str, sub) -> None:
     send_telegram(chat_id, text)
 
 
-def send_premium_confirmation(chat_id: str, until: str) -> None:
+def send_premium_confirmation(chat_id: str, until: str, receipt: dict = None) -> None:
     text = (
         f"🎉 <b>SubPing Premium активирован!</b>\n\n"
         f"Открыты все функции: безлимит подписок, аналитика расходов, "
         f"ближайшие списания и напоминания о платежах.\n"
         f"Premium активен до {until or 'бессрочно'}."
     )
+    if receipt and receipt.get("url"):
+        text += f"\n\nЧек об оплате: {receipt['url']}"
     send_telegram(chat_id, text)
 
 
-def send_owner_payment_notice(user_email: str, amount: float, until: str, sender: str = "") -> None:
+def send_owner_payment_notice(user_email: str, amount: float, until: str, sender: str = "", receipt: dict = None) -> None:
     text = (
         f"💰 <b>Оплата SubPing Premium</b>\n\n"
         f"Пользователь: {user_email}\n"
         f"Сумма: {amount:.2f} ₽\n"
         f"Premium до: {until or 'бессрочно'}\n"
-        f"{('Отправитель: ' + sender) if sender else ''}"
-        f"\nНе забудьте проверить, что чек по самозанятости сформирован."
+        f"{('Отправитель: ' + sender + chr(10)) if sender else ''}"
     )
+    if receipt and receipt.get("url"):
+        text += f"\nЧек самозанятого: {receipt['url']}"
+    elif receipt and receipt.get("error"):
+        text += f"\n⚠️ Чек НЕ сформирован: {receipt['error']}"
+        text += "\nНе забудьте выставить чек в «Мой налог» вручную."
+    else:
+        text += "\nЧек самозанятого не настроен (MYNALOG_INN/PASSWORD) — выставьте вручную."
     send_telegram(OWNER_TG_CHAT_ID, text)
 
 

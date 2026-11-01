@@ -12,6 +12,9 @@ os.environ["OWNER_EMAIL"] = EMAIL
 os.environ["SUBTRAK_DB"] = os.path.join(
     tempfile.gettempdir(), f"subtrack_test_api_{os.getpid()}_{random.randint(1000, 9999)}.db"
 )
+# Тесты не должны бить в боевой «Мой налог», даже если пароль задан в окружении.
+os.environ.pop("MYNALOG_INN", None)
+os.environ.pop("MYNALOG_PASSWORD", None)
 
 from fastapi.testclient import TestClient
 import db

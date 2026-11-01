@@ -13,6 +13,9 @@ os.environ["PAYMENT_MODE"] = "yookassa"
 os.environ["YOOKASSA_SHOP_ID"] = "123456"
 os.environ["YOOKASSA_SECRET_KEY"] = "test_secret_key"
 os.environ["FRONTEND_ORIGIN"] = "https://gan4ik13.github.io"
+# Тесты не должны бить в боевой «Мой налог», даже если пароль задан в окружении.
+os.environ.pop("MYNALOG_INN", None)
+os.environ.pop("MYNALOG_PASSWORD", None)
 # Герметичный прогон: всегда изолированная SQLite-БД, даже если в окружении
 # задан DATABASE_URL (иначе тест пишет в постоянную БД и хватает «хвосты» прошлых прогонов).
 os.environ["SUBTRAK_DB"] = os.path.join(
