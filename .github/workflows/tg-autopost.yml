@@ -1,0 +1,31 @@
+name: TG Autopost
+
+# Автопостинг в канал @SubPingChanal: ротация 7 постов из marketing/tg-posts.json.
+# Индекс поста = (дни с эпохи // 2) % 7 — каждые 2 дня следующий пост,
+# без хранения состояния; пропущенный запуск просто сдвигает очередь.
+# Требование: бот из секрета TG_BOT_TOKEN — админ канала с правом публикации.
+
+on:
+  schedule:
+    - cron: '0 18 */2 * *'   # каждые 2 дня, 18:00 UTC (21:00 МСК)
+  workflow_dispatch:
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Send post to @SubPingChanal
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          idx=$(( ($(date +%s) / 86400 / 2) % 7 ))
+          echo "post index: $idx"
+          TEXT=$(python3 -c "import json;print(json.load(open('marketing/tg-posts.json'))['posts'][$idx]['text'])")
+          RESP=$(curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=@SubPingChanal" \
+            --data-urlencode "text=$TEXT" \
+            --data-urlencode "parse_mode=HTML" \
+            --data-urlencode "disable_web_page_preview=true")
+          echo "$RESP" | python3 -c "import sys,json;d=json.load(sys.stdin);print('sent ok' if d.get('ok') else d);sys.exit(0 if d.get('ok') else 1)"
